@@ -65,6 +65,7 @@ static const struct
 	{mtSpider,         "spider",         "Spider",         "spider"},
 	{mtSquid,          "squid",          "Squid",          "squid"},
 	{mtVillager,       "villager",       "Villager",       "villager"},
+	{mtVindicator,     "vindicator",     "Vindicator",     "vindicator"},
 	{mtWitch,          "witch",          "Witch",          "witch"},
 	{mtWither,         "wither",         "WitherBoss",     "wither"},
 	{mtWitherSkeleton, "witherskeleton", "WitherSkeleton", "wither_skeleton"},
@@ -72,6 +73,8 @@ static const struct
 	{mtZombie,         "zombie",         "Zombie",         "zombie"},
 	{mtZombiePigman,   "zombiepigman",   "PigZombie",      "zombie_pigman"},
 	{mtZombieVillager, "zombievillager", "ZombieVillager", "zombie_villager"},
+	{mtIllusioner,     "illusioner",     "Illusioner",     "illusioner"},
+	{mtParrot,         "parrot",         "Parrot",         "parrot"},
 } ;
 
 
@@ -1318,19 +1321,22 @@ std::unique_ptr<cMonster> cMonster::NewMonsterFromType(eMonsterType a_MobType)
 		case mtSnowGolem:      return std::make_unique<cSnowGolem>();
 		case mtSpider:         return std::make_unique<cSpider>();
 		case mtSquid:          return std::make_unique<cSquid>();
+		case mtVillager: return std::make_unique<cVillager>(cVillager::GetRandomProfession());
+		case mtVindicator:     return std::make_unique<cVindicator>();
 		case mtWitch:          return std::make_unique<cWitch>();
 		case mtWither:         return std::make_unique<cWither>();
 		case mtWitherSkeleton: return std::make_unique<cWitherSkeleton>();
 		case mtWolf:           return std::make_unique<cWolf>();
 		case mtZombie:         return std::make_unique<cZombie>();
 		case mtZombiePigman:   return std::make_unique<cZombiePigman>();
+		case mtIllusioner:     return std::make_unique<cIllusioner>();
+		case mtParrot:         return std::make_unique<cParrot>();
 		default:
 		{
 			ASSERT(!"Unhandled mob type whilst trying to spawn mob!");
 			return nullptr;
 		}
-	}
-}
+		}
 
 
 

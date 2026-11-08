@@ -45,5 +45,6 @@ protected:
 	AString m_OwnerName;
 	cUUID m_OwnerUUID;
 	int m_DanceTimer = 0;
+	int m_DanceCheckTimer = 0;  // Timer to limit dancing checks to once per second
 	int m_Variant = 0; // 0=Red, 1=Blue, 2=Green, 3=Cyan, 4=Gray
 };

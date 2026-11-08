@@ -156,10 +156,10 @@ Vector3f cFluidSimulator::GetFlowingDirection(Vector3i a_Pos)
 	std::array<Vector3i, 4> Offsets
 	{
 		{
-			{ 1, 0, 0 },
-			{ 0, 0, 1 },
-			{ 1, 0, 0 },
-			{ 0, 0, 1 }
+			{ 1, 0, 0 },   // +X
+			{ 0, 0, 1 },   // +Z
+			{ -1, 0, 0 },  // -X
+			{ 0, 0, -1 }   // -Z
 		}
 	};
 
@@ -167,7 +167,7 @@ Vector3f cFluidSimulator::GetFlowingDirection(Vector3i a_Pos)
 	{
 		if (IsAllowedBlock(m_World.GetBlock(a_Pos + Offsets[i])))
 		{
-			LevelPoint[i] = HeightFromMeta(m_World.GetBlockMeta(Offsets[i]));
+			LevelPoint[i] = HeightFromMeta(m_World.GetBlockMeta(a_Pos + Offsets[i]));
 		}
 		else
 		{

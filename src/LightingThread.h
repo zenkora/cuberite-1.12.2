@@ -76,6 +76,11 @@ protected:
 		int m_ChunkX;
 		int m_ChunkZ;
 		std::unique_ptr<cChunkCoordCallback> m_CallbackAfter;
+		// Store iterators for O(1) queue removal
+		cChunkStays::iterator m_PendingQueueIterator;
+		cChunkStays::iterator m_QueueIterator;
+		bool m_IsInPendingQueue = false;
+		bool m_IsInQueue = false;
 
 		cLightingChunkStay(cLightingThread & a_LightingThread, int a_ChunkX, int a_ChunkZ, std::unique_ptr<cChunkCoordCallback> a_CallbackAfter);
 

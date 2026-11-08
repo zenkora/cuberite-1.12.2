@@ -154,7 +154,10 @@ void cLightingThread::QueueChunk(int a_ChunkX, int a_ChunkZ, std::unique_ptr<cCh
 		// The ChunkStay will enqueue itself using the QueueChunkStay() once it is fully loaded
 		// In the meantime, put it into the PendingQueue so that it can be removed when stopping the thread
 		cCSLock Lock(m_CS);
-		m_PendingQueue.push_back(ChunkStay);
+		auto * LightingChunkStay = static_cast<cLightingChunkStay *>(ChunkStay);
+		m_PendingQueue.push_back(LightingChunkStay);
+		LightingChunkStay->m_PendingQueueIterator = std::prev(m_PendingQueue.end());
+		LightingChunkStay->m_IsInPendingQueue = true;
 	}
 	ChunkStay->Enable(*m_World.GetChunkMap());
 }
@@ -215,6 +218,7 @@ void cLightingThread::Execute(void)
 			}
 			Item = static_cast<cLightingChunkStay *>(m_Queue.front());
 			m_Queue.pop_front();
+			Item->m_IsInQueue = false;
 			if (m_Queue.empty())
 			{
 				m_evtQueueEmpty.Set();
@@ -574,8 +578,14 @@ void cLightingThread::QueueChunkStay(cLightingChunkStay & a_ChunkStay)
 	// Move the ChunkStay from the Pending queue to the lighting queue.
 	{
 		cCSLock Lock(m_CS);
-		m_PendingQueue.remove(&a_ChunkStay);
+		if (a_ChunkStay.m_IsInPendingQueue)
+		{
+			m_PendingQueue.erase(a_ChunkStay.m_PendingQueueIterator);
+			a_ChunkStay.m_IsInPendingQueue = false;
+		}
 		m_Queue.push_back(&a_ChunkStay);
+		a_ChunkStay.m_QueueIterator = std::prev(m_Queue.end());
+		a_ChunkStay.m_IsInQueue = true;
 	}
 	m_evtItemAdded.Set();
 }
@@ -591,7 +601,11 @@ cLightingThread::cLightingChunkStay::cLightingChunkStay(cLightingThread & a_Ligh
 	m_LightingThread(a_LightingThread),
 	m_ChunkX(a_ChunkX),
 	m_ChunkZ(a_ChunkZ),
-	m_CallbackAfter(std::move(a_CallbackAfter))
+	m_CallbackAfter(std::move(a_CallbackAfter)),
+	m_PendingQueueIterator(),
+	m_QueueIterator(),
+	m_IsInPendingQueue(false),
+	m_IsInQueue(false)
 {
 	Add(a_ChunkX + 1, a_ChunkZ + 1);
 	Add(a_ChunkX + 1, a_ChunkZ);

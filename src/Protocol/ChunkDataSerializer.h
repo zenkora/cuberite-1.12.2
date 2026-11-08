@@ -26,12 +26,9 @@ class cChunkDataSerializer
 	/** Enum to collapse protocol versions into a contiguous index. */
 	enum class CacheVersion
 	{
-		v47,
-		v107,
 		v110,
-		v340,
 
-		Last = CacheVersion::v340
+		Last = CacheVersion::v110
 	};
 
 	/** A single cache entry containing the raw data, compressed data, and a validity flag. */

@@ -264,6 +264,25 @@ bool cMobSpawner::CanSpawnHere(cChunk * a_Chunk, Vector3i a_RelPos, eMonsterType
 			);
 		}
 
+		case mtParrot:
+		{
+			// Parrots spawn on grass, leaves, or logs in jungle biomes at y >= 60
+			return (
+				(TargetBlock == E_BLOCK_AIR) &&
+				(BlockAbove == E_BLOCK_AIR) &&
+				(
+					(BlockBelow == E_BLOCK_GRASS) || 
+					(BlockBelow == E_BLOCK_LEAVES) || 
+					(BlockBelow == E_BLOCK_NEW_LEAVES) ||
+					(BlockBelow == E_BLOCK_LOG) ||
+					(BlockBelow == E_BLOCK_NEW_LOG)
+				) &&
+				(a_RelPos.y >= 60) &&
+				(a_Biome == biJungle || a_Biome == biJungleHills || a_Biome == biJungleEdge || a_Biome == biJungleM || a_Biome == biJungleEdgeM) &&
+				(Random.RandBool(0.2))  // Rare spawn
+			);
+		}
+
 		case mtSpider:
 		{
 			bool CanSpawn = true;
@@ -308,6 +327,20 @@ bool cMobSpawner::CanSpawnHere(cChunk * a_Chunk, Vector3i a_RelPos, eMonsterType
 				(SkyLight <= 7) &&
 				(BlockLight <= 7) &&
 				(Random.RandBool(0.6))
+			);
+		}
+
+		case mtIllusioner:
+		{
+			// Illusioners spawn in roofed forests (Woodland Mansion areas) at night/low light
+			return (
+				(TargetBlock == E_BLOCK_AIR) &&
+				(BlockAbove == E_BLOCK_AIR) &&
+				((!cBlockInfo::IsTransparent(BlockBelow)) || (a_DisableSolidBelowCheck)) &&
+				(SkyLight <= 7) &&
+				(BlockLight <= 7) &&
+				(a_Biome == biRoofedForest || a_Biome == biRoofedForestM) &&
+				(Random.RandBool(0.05))  // Very rare spawn
 			);
 		}
 
@@ -385,6 +418,7 @@ std::set<eMonsterType> cMobSpawner::GetAllowedMobTypes(EMCSBiome a_Biome)
 		case biJungleEdgeM:
 		{
 			ListOfSpawnables.insert(mtOcelot);
+			ListOfSpawnables.insert(mtParrot);
 			break;
 		}
 
@@ -397,6 +431,14 @@ std::set<eMonsterType> cMobSpawner::GetAllowedMobTypes(EMCSBiome a_Biome)
 		case biSavannaPlateauM:
 		{
 			ListOfSpawnables.insert(mtHorse);
+			break;
+		}
+
+		// Add illusioner in roofed forest biomes (Woodland Mansion areas)
+		case biRoofedForest:
+		case biRoofedForestM:
+		{
+			ListOfSpawnables.insert(mtIllusioner);
 			break;
 		}
 
@@ -512,6 +554,10 @@ cMonster * cMobSpawner::TryToSpawnHere(cChunk * a_Chunk, Vector3i a_RelPos, EMCS
 			a_MaxPackSize = 8;
 		}
 		else if (m_MobType == mtGhast)
+		{
+			a_MaxPackSize = 1;
+		}
+		else if (m_MobType == mtIllusioner)
 		{
 			a_MaxPackSize = 1;
 		}

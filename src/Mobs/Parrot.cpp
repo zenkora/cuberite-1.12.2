@@ -23,7 +23,13 @@ void cParrot::Tick(std::chrono::milliseconds a_Dt, cChunk & a_Chunk)
 		m_DanceTimer -= static_cast<int>(a_Dt.count());
 	}
 
-	CheckForDancing(a_Chunk);
+	// Only check for dancing once per second (20 ticks) to avoid scanning chunks every tick
+	m_DanceCheckTimer -= static_cast<int>(a_Dt.count());
+	if (m_DanceCheckTimer <= 0)
+	{
+		m_DanceCheckTimer = 20;  // 20 ticks = 1 second
+		CheckForDancing(a_Chunk);
+	}
 }
 
 void cParrot::InStateIdle(std::chrono::milliseconds a_Dt, cChunk & a_Chunk)
