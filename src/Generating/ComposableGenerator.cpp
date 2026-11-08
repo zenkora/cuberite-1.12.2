@@ -219,7 +219,7 @@ void cComposableGenerator::InitializeGeneratorDefaults(cIniFile & a_IniFile, eDi
 				"Mineshafts, "
 				"Trees, "
 				"Villages, "
-				"SinglePieceStructures: JungleTemple|WitchHut|DesertPyramid|DesertWell, "
+				"SinglePieceStructures: JungleTemple|WitchHut|DesertPyramid|DesertWell|WoodlandMansion, "
 				"TallGrass, "
 				"SprinkleFoliage, "
 				"Ice, "

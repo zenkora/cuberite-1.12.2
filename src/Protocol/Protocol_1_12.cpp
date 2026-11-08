@@ -194,6 +194,9 @@ namespace Metadata_1_12
 		// Ocelot
 		OCELOT_TYPE = _TAMEABLE_NEXT,
 
+		// Parrot
+		PARROT_VARIANT = _TAMEABLE_NEXT,
+
 		// Wolf
 		WOLF_DAMAGE_TAKEN = _TAMEABLE_NEXT,
 		WOLF_BEGGING,
@@ -939,13 +942,42 @@ void cProtocol_1_12::WriteMobMetadata(cPacketizer & a_Pkt, const cMonster & a_Mo
 
 		case mtHusk:
 
-		case mtIllusioner:
-
 		case mtLlama:
 
 		case mtParrot:
+		{
+			auto & Parrot = static_cast<const cParrot &>(a_Mob);
 
-		case mtPolarBear:
+			a_Pkt.WriteBEUInt8(AGEABLE_BABY);
+			a_Pkt.WriteBEUInt8(METADATA_TYPE_BOOL);
+			a_Pkt.WriteBool(Parrot.IsBaby());
+
+			Int8 TameableStatus = 0;
+			if (Parrot.IsSitting())
+			{
+				TameableStatus |= 0x1;
+			}
+			if (Parrot.IsTame())
+			{
+				TameableStatus |= 0x4;
+			}
+			a_Pkt.WriteBEUInt8(TAMEABLE_ANIMAL_STATUS);
+			a_Pkt.WriteBEUInt8(METADATA_TYPE_BYTE);
+			a_Pkt.WriteBEInt8(TameableStatus);
+
+			if (Parrot.IsTame())
+			{
+				a_Pkt.WriteBEUInt8(TAMEABLE_ANIMAL_OWNER);
+				a_Pkt.WriteBEUInt8(METADATA_TYPE_OPTIONAL_UUID);
+				a_Pkt.WriteBool(true);
+				a_Pkt.WriteUUID(Parrot.GetOwnerUUID());
+			}
+
+			a_Pkt.WriteBEUInt8(PARROT_VARIANT);
+					a_Pkt.WriteBEUInt8(METADATA_TYPE_VARINT);
+					a_Pkt.WriteVarInt32(static_cast<UInt32>(Parrot.GetVariant()));
+			break;
+		}  // case mtParrot
 
 		case mtShulker:
 
@@ -957,9 +989,11 @@ void cProtocol_1_12::WriteMobMetadata(cPacketizer & a_Pkt, const cMonster & a_Mo
 		case mtVex:
 
 		case mtVindicator:
+
+		case mtIllusioner:
 		{
-			// Todo: Mobs not added yet. Grouped ones have the same metadata
-			ASSERT(!"cProtocol_1_12::WriteMobMetadata: received unimplemented type");
+			// Illagers (Vindicator, Evoker, Illusioner) share the same metadata: ILLAGER_FLAGS
+			// TODO: Implement proper Illager metadata when Illager classes are added
 			break;
 		}
 

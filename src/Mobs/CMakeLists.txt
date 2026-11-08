@@ -15,11 +15,13 @@ target_sources(
 	Giant.cpp
 	Guardian.cpp
 	Horse.cpp
+	Illusioner.cpp
 	IronGolem.cpp
 	MagmaCube.cpp
 	Monster.cpp
 	Mooshroom.cpp
 	Ocelot.cpp
+	Parrot.cpp
 	PassiveAggressiveMonster.cpp
 	PassiveMonster.cpp
 	Path.cpp
@@ -56,6 +58,7 @@ target_sources(
 	Giant.h
 	Guardian.h
 	Horse.h
+	Illusioner.h
 	IncludeAllMonsters.h
 	IronGolem.h
 	MagmaCube.h
@@ -63,6 +66,7 @@ target_sources(
 	MonsterTypes.h
 	Mooshroom.h
 	Ocelot.h
+	Parrot.h
 	PassiveAggressiveMonster.h
 	PassiveMonster.h
 	Path.h
