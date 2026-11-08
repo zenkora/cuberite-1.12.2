@@ -16,6 +16,16 @@ public:
 	virtual void Tick(std::chrono::milliseconds a_Dt, cChunk & a_Chunk) override;
 	virtual bool DoTakeDamage(TakeDamageInfo & a_TDI) override;
 
+	// Getters for NBT saving
+	int GetSpellCooldown(void) const { return m_SpellCooldown; }
+	int GetMirrorImageCooldown(void) const { return m_MirrorImageCooldown; }
+	int GetNextSpellType(void) const { return m_NextSpellType; }
+
+	// Setters for NBT loading
+	void SetSpellCooldown(int a_Cooldown) { m_SpellCooldown = a_Cooldown; }
+	void SetMirrorImageCooldown(int a_Cooldown) { m_MirrorImageCooldown = a_Cooldown; }
+	void SetNextSpellType(int a_Type) { m_NextSpellType = a_Type; }
+
 protected:
 	virtual void InStateIdle(std::chrono::milliseconds a_Dt, cChunk & a_Chunk) override;
 	virtual void InStateChasing(std::chrono::milliseconds a_Dt, cChunk & a_Chunk) override;

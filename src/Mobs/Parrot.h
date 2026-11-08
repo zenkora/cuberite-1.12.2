@@ -20,6 +20,7 @@ public:
 	// Get functions
 	bool IsSitting(void) const { return m_IsSitting; }
 	bool IsTame(void) const { return m_IsTame; }
+	AString GetOwnerName(void) const { return m_OwnerName; }
 	cUUID GetOwnerUUID(void) const { return m_OwnerUUID; }
 	int GetVariant(void) const { return m_Variant; }
 

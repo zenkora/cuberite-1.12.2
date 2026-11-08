@@ -974,11 +974,8 @@ public:
 				case mtFox:
 				case mtHoglin:
 				case mtHusk:
-				case mtIllusioner:
 				case mtLlama:
 				case mtMule:
-				case mtPanda:
-				case mtParrot:
 				case mtPhantom:
 				case mtPiglin:
 				case mtPiglinBrute:
@@ -997,6 +994,32 @@ public:
 				case mtVex:
 				case mtVindicator:
 				case mtWanderingTrader:
+				case mtIllusioner:
+				{
+					const cIllusioner * Illusioner = static_cast<const cIllusioner *>(a_Monster);
+					mWriter.AddInt("SpellCooldown", Illusioner->GetSpellCooldown());
+					mWriter.AddInt("MirrorImageCooldown", Illusioner->GetMirrorImageCooldown());
+					mWriter.AddInt("NextSpellType", Illusioner->GetNextSpellType());
+					break;
+				}
+				case mtParrot:
+				{
+					const cParrot * Parrot = static_cast<const cParrot *>(a_Monster);
+					if (!Parrot->GetOwnerName().empty())
+					{
+						mWriter.AddString("Owner", Parrot->GetOwnerName());
+					}
+					if (!Parrot->GetOwnerUUID().IsNil())
+					{
+						mWriter.AddString("OwnerUUID", Parrot->GetOwnerUUID().ToShortString());
+					}
+					mWriter.AddByte("Sitting", Parrot->IsSitting() ? 1 : 0);
+					mWriter.AddByte("IsTame", Parrot->IsTame() ? 1 : 0);
+					mWriter.AddInt("Variant", Parrot->GetVariant());
+					mWriter.AddInt("Age", Parrot->GetAge());
+					break;
+				}
+
 				case mtZoglin:
 				case mtZombieHorse:
 				{

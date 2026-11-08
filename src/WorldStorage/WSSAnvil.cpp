@@ -2658,7 +2658,35 @@ void cWSSAnvil::LoadHuskFromNBT(cEntityList &a_Entities, const cParsedNBT &a_NBT
 
 void cWSSAnvil::LoadIllusionerFromNBT(cEntityList &a_Entities, const cParsedNBT &a_NBT, int a_TagIdx)
 {
-	// TODO
+	std::unique_ptr<cIllusioner> Monster = std::make_unique<cIllusioner>();
+	if (!LoadEntityBaseFromNBT(*Monster.get(), a_NBT, a_TagIdx))
+	{
+		return;
+	}
+	if (!LoadMonsterBaseFromNBT(*Monster.get(), a_NBT, a_TagIdx))
+	{
+		return;
+	}
+
+	int SpellCooldownIdx = a_NBT.FindChildByName(a_TagIdx, "SpellCooldown");
+	if (SpellCooldownIdx > 0)
+	{
+		Monster->SetSpellCooldown(a_NBT.GetInt(SpellCooldownIdx));
+	}
+
+	int MirrorImageCooldownIdx = a_NBT.FindChildByName(a_TagIdx, "MirrorImageCooldown");
+	if (MirrorImageCooldownIdx > 0)
+	{
+		Monster->SetMirrorImageCooldown(a_NBT.GetInt(MirrorImageCooldownIdx));
+	}
+
+	int NextSpellTypeIdx = a_NBT.FindChildByName(a_TagIdx, "NextSpellType");
+	if (NextSpellTypeIdx > 0)
+	{
+		Monster->SetNextSpellType(a_NBT.GetInt(NextSpellTypeIdx));
+	}
+
+	a_Entities.emplace_back(std::move(Monster));
 }
 
 
@@ -2817,7 +2845,67 @@ void cWSSAnvil::LoadPandaFromNBT(cEntityList &a_Entities, const cParsedNBT &a_NB
 
 void cWSSAnvil::LoadParrotFromNBT(cEntityList &a_Entities, const cParsedNBT &a_NBT, int a_TagIdx)
 {
-	// TODO
+	std::unique_ptr<cParrot> Monster = std::make_unique<cParrot>();
+	if (!LoadEntityBaseFromNBT(*Monster.get(), a_NBT, a_TagIdx))
+	{
+		return;
+	}
+	if (!LoadMonsterBaseFromNBT(*Monster.get(), a_NBT, a_TagIdx))
+	{
+		return;
+	}
+
+	auto OwnerInfo = LoadEntityOwner(a_NBT, a_TagIdx);
+	if (!OwnerInfo.first.empty() && !OwnerInfo.second.IsNil())
+	{
+		Monster->SetOwner(OwnerInfo.first, OwnerInfo.second);
+		Monster->SetIsTame(true);
+	}
+
+	int SittingIdx = a_NBT.FindChildByName(a_TagIdx, "Sitting");
+	if ((SittingIdx > 0) && (a_NBT.GetType(SittingIdx) == TAG_Byte))
+	{
+		bool Sitting = (a_NBT.GetByte(SittingIdx) == 1);
+		Monster->SetIsSitting(Sitting);
+	}
+
+	int IsTameIdx = a_NBT.FindChildByName(a_TagIdx, "IsTame");
+	if ((IsTameIdx > 0) && (a_NBT.GetType(IsTameIdx) == TAG_Byte))
+	{
+		bool IsTame = (a_NBT.GetByte(IsTameIdx) == 1);
+		Monster->SetIsTame(IsTame);
+	}
+
+	int VariantIdx = a_NBT.FindChildByName(a_TagIdx, "Variant");
+	if (VariantIdx > 0)
+	{
+		switch (a_NBT.GetType(VariantIdx))
+		{
+			case TAG_Byte:
+				Monster->SetVariant(a_NBT.GetByte(VariantIdx));
+				break;
+			case TAG_Int:
+				Monster->SetVariant(a_NBT.GetInt(VariantIdx));
+				break;
+			default:
+				break;
+		}
+	}
+
+	int AgeableIdx = a_NBT.FindChildByName(a_TagIdx, "Age");
+	if (AgeableIdx > 0)
+	{
+		int Age;
+		switch (a_NBT.GetType(AgeableIdx))
+		{
+			case TAG_Byte: Age = static_cast<int>(a_NBT.GetByte(AgeableIdx)); break;
+			case TAG_Int:  Age = a_NBT.GetInt(AgeableIdx); break;
+			default: Age = 0; break;
+		}
+		Monster->SetAge(Age);
+	}
+
+	a_Entities.emplace_back(std::move(Monster));
 }
 
 
