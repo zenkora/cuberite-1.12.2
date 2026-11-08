@@ -29,11 +29,9 @@ class cChunkDataSerializer
 		v47,
 		v107,
 		v110,
-		v393,
-		v401,
-		v477,
+		v340,
 
-		Last = CacheVersion::v477
+		Last = CacheVersion::v340
 	};
 
 	/** A single cache entry containing the raw data, compressed data, and a validity flag. */
@@ -60,9 +58,7 @@ private:
 	inline void Serialize47 (int a_ChunkX, int a_ChunkZ, const ChunkBlockData & a_BlockData, const ChunkLightData & a_LightData, const unsigned char * a_BiomeMap);  // Release 1.8
 	inline void Serialize107(int a_ChunkX, int a_ChunkZ, const ChunkBlockData & a_BlockData, const ChunkLightData & a_LightData, const unsigned char * a_BiomeMap);  // Release 1.9
 	inline void Serialize110(int a_ChunkX, int a_ChunkZ, const ChunkBlockData & a_BlockData, const ChunkLightData & a_LightData, const unsigned char * a_BiomeMap);  // Release 1.9.4
-	template <auto Palette>
-	inline void Serialize393(int a_ChunkX, int a_ChunkZ, const ChunkBlockData & a_BlockData, const ChunkLightData & a_LightData, const unsigned char * a_BiomeMap);  // Release 1.13 - 1.13.2
-	inline void Serialize477(int a_ChunkX, int a_ChunkZ, const ChunkBlockData & a_BlockData, const ChunkLightData & a_LightData, const unsigned char * a_BiomeMap);  // Release 1.14 - 1.14.4
+	inline void Serialize340(int a_ChunkX, int a_ChunkZ, const ChunkBlockData & a_BlockData, const ChunkLightData & a_LightData, const unsigned char * a_BiomeMap);  // Release 1.12.2
 
 	/** Writes all blocks in a chunk section into a series of Int64.
 	Writes start from the bit directly subsequent to the previous write's end, possibly crossing over to the next Int64. */

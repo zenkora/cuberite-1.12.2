@@ -171,14 +171,14 @@ public:
 	}
 
 	/** Writes the specified block position as a single encoded 64-bit BigEndian integer.
-	The three coordinates are written in XZY order, in 1.14+. */
+	The three coordinates are written in XZY order (1.12.2). */
 	inline void WriteXZYPosition64(int a_BlockX, int a_BlockY, int a_BlockZ)
 	{
 		VERIFY(m_Out.WriteXZYPosition64(a_BlockX, a_BlockY, a_BlockZ));
 	}
 
 	/** Writes the specified block position as a single encoded 64-bit BigEndian integer.
-	The three coordinates are written in XZY order, in 1.14+. */
+	The three coordinates are written in XZY order (1.12.2). */
 	inline void WriteXZYPosition64(const Vector3i a_Position)
 	{
 		VERIFY(m_Out.WriteXZYPosition64(a_Position.x, a_Position.y, a_Position.z));
