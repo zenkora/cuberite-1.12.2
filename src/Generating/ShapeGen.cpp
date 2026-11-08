@@ -5,6 +5,7 @@
 
 #include "Globals.h"
 #include "HeiGen.h"
+#include "HeiGenVanilla.h"
 #include "../IniFile.h"
 #include "DistortedHeightmap.h"
 #include "EndGen.h"
@@ -111,7 +112,22 @@ std::unique_ptr<cTerrainShapeGen> cTerrainShapeGen::CreateShapeGen(
 	// Choose the shape generator based on the name:
 	a_CacheOffByDefault = false;
 	std::unique_ptr<cTerrainShapeGen> res;
-	if (NoCaseCompare(shapeGenName, "DistortedHeightmap") == 0)
+	if (NoCaseCompare(shapeGenName, "Vanilla") == 0)
+	{
+		auto heightGen = std::make_unique<cHeiGenVanilla>(a_Seed, a_BiomeGen);
+		res = std::make_unique<cTerrainHeightToShapeGen>(std::move(heightGen));
+	}
+	else if (NoCaseCompare(shapeGenName, "VanillaNether") == 0)
+	{
+		auto heightGen = std::make_unique<cHeiGenVanillaNether>(a_Seed);
+		res = std::make_unique<cTerrainHeightToShapeGen>(std::move(heightGen));
+	}
+	else if (NoCaseCompare(shapeGenName, "VanillaEnd") == 0)
+	{
+		auto heightGen = std::make_unique<cHeiGenVanillaEnd>(a_Seed);
+		res = std::make_unique<cTerrainHeightToShapeGen>(std::move(heightGen));
+	}
+	else if (NoCaseCompare(shapeGenName, "DistortedHeightmap") == 0)
 	{
 		res = std::make_unique<cDistortedHeightmap>(a_Seed, a_BiomeGen);
 	}

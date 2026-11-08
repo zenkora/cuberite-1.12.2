@@ -2,6 +2,7 @@ target_sources(
 	${CMAKE_PROJECT_NAME} PRIVATE
 
 	BioGen.cpp
+	BioGenVanilla.cpp
 	Caves.cpp
 	ChunkDesc.cpp
 	ChunkGenerator.cpp
@@ -15,6 +16,7 @@ target_sources(
 	FinishGen.cpp
 	GridStructGen.cpp
 	HeiGen.cpp
+	HeiGenVanilla.cpp
 	MineShafts.cpp
 	Noise3DGenerator.cpp
 	PieceGeneratorBFSTree.cpp
@@ -35,6 +37,7 @@ target_sources(
 	VillageGen.cpp
 
 	BioGen.h
+	BioGenVanilla.h
 	Caves.h
 	ChunkDesc.h
 	ChunkGenerator.h
@@ -49,6 +52,7 @@ target_sources(
 	FinishGen.h
 	GridStructGen.h
 	HeiGen.h
+	HeiGenVanilla.h
 	IntGen.h
 	MineShafts.h
 	Noise3DGenerator.h

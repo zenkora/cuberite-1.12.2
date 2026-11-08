@@ -205,8 +205,8 @@ void cComposableGenerator::InitializeGeneratorDefaults(cIniFile & a_IniFile, eDi
 	{
 		case dimOverworld:
 		{
-			a_IniFile.GetValueSet("Generator", "BiomeGen",       "Grown");
-			a_IniFile.GetValueSet("Generator", "ShapeGen",       "BiomalNoise3D");
+			a_IniFile.GetValueSet("Generator", "BiomeGen",       "Vanilla");
+			a_IniFile.GetValueSet("Generator", "ShapeGen",       "Vanilla");
 			a_IniFile.GetValueSet("Generator", "CompositionGen", "Biomal");
 			a_IniFile.GetValueSet("Generator", "Finishers",
 				"RoughRavines, "
@@ -241,9 +241,7 @@ void cComposableGenerator::InitializeGeneratorDefaults(cIniFile & a_IniFile, eDi
 			a_IniFile.GetValueSet("Generator", "Generator",        "Composable");
 			a_IniFile.GetValueSet("Generator", "BiomeGen",         "Constant");
 			a_IniFile.GetValueSet("Generator", "ConstantBiome",    "Nether");
-			a_IniFile.GetValueSet("Generator", "ShapeGen",         "HeightMap");
-			a_IniFile.GetValueSet("Generator", "HeightGen",        "Flat");
-			a_IniFile.GetValueSet("Generator", "FlatHeight",       "128");
+			a_IniFile.GetValueSet("Generator", "ShapeGen",         "VanillaNether");
 			a_IniFile.GetValueSet("Generator", "CompositionGen",   "Nether");
 			a_IniFile.GetValueSet("Generator", "Finishers",
 				"SoulsandRims, "
@@ -262,7 +260,7 @@ void cComposableGenerator::InitializeGeneratorDefaults(cIniFile & a_IniFile, eDi
 		{
 			a_IniFile.GetValueSet("Generator", "BiomeGen",       "Constant");
 			a_IniFile.GetValueSet("Generator", "ConstantBiome",  "End");
-			a_IniFile.GetValueSet("Generator", "ShapeGen",       "End");
+			a_IniFile.GetValueSet("Generator", "ShapeGen",       "VanillaEnd");
 			a_IniFile.GetValueSet("Generator", "CompositionGen", "End");
 			a_IniFile.GetValueSet("Generator", "Finishers",      "EnderDragonFightStructures");
 			break;

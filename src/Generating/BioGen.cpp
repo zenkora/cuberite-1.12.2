@@ -7,6 +7,7 @@
 #include "BioGen.h"
 #include "IntGen.h"
 #include "ProtIntGen.h"
+#include "BioGenVanilla.h"
 #include "../IniFile.h"
 #include "../LinearUpscale.h"
 
@@ -1173,6 +1174,10 @@ std::unique_ptr<cBiomeGen> cBiomeGen::CreateBiomeGen(cIniFile & a_IniFile, int a
 	else if (NoCaseCompare(BiomeGenName, "grownprot") == 0)
 	{
 		res = std::make_unique<cBioGenProtGrown>(a_Seed);
+	}
+	else if (NoCaseCompare(BiomeGenName, "vanilla") == 0)
+	{
+		res = std::make_unique<cBioGenVanilla>(a_Seed);
 	}
 	else
 	{

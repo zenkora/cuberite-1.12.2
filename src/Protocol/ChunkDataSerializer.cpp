@@ -22,17 +22,17 @@ namespace
 
 	auto PaletteLegacy(const BLOCKTYPE a_BlockType, const NIBBLETYPE a_Meta)
 	{
-		return (a_BlockType << 4) | a_Meta;
+	    return (a_BlockType << 4) | a_Meta;
 	}
 
-	// Copied from cProtocol_1_8_0::CompressPacket - 1.12.2 uses the same compression as 1.8
-	static const UInt32 CompressionThreshold = 256;
+	// Compression threshold for chunk data serialization (same value as Protocol_1_8.cpp: 256)
+	static const UInt32 ChunkCompressionThreshold = 256;
 
 	void CompressPacket(CircularBufferCompressor & a_Packet, ContiguousByteBuffer & a_CompressedData)
 	{
 		const auto Uncompressed = a_Packet.GetView();
 
-		if (Uncompressed.size() < CompressionThreshold)
+		if (Uncompressed.size() < ChunkCompressionThreshold)
 		{
 			/* Size doesn't reach threshold, not worth compressing.
 

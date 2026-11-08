@@ -5,6 +5,7 @@
 
 #include "Globals.h"
 #include "HeiGen.h"
+#include "HeiGenVanilla.h"
 #include "../LinearUpscale.h"
 #include "../IniFile.h"
 #include "DistortedHeightmap.h"
@@ -851,6 +852,18 @@ std::unique_ptr<cTerrainHeightGen> cTerrainHeightGen::CreateHeightGen(cIniFile &
 	else if (NoCaseCompare(HeightGenName, "classic") == 0)
 	{
 		res = std::make_unique<cHeiGenClassic>(a_Seed);
+	}
+	else if (NoCaseCompare(HeightGenName, "vanilla") == 0)
+	{
+		res = std::make_unique<cHeiGenVanilla>(a_Seed, a_BiomeGen);
+	}
+	else if (NoCaseCompare(HeightGenName, "vanillanether") == 0)
+	{
+		res = std::make_unique<cHeiGenVanillaNether>(a_Seed);
+	}
+	else if (NoCaseCompare(HeightGenName, "vanillaend") == 0)
+	{
+		res = std::make_unique<cHeiGenVanillaEnd>(a_Seed);
 	}
 	else if (NoCaseCompare(HeightGenName, "DistortedHeightmap") == 0)
 	{
