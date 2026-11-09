@@ -15,7 +15,6 @@
 #include "Item.h"
 #include "FurnaceRecipe.h"
 #include "WebAdmin.h"
-#include "Protocol/ProtocolRecognizer.h"
 #include "CommandOutput.h"
 #include "FastRandom.h"
 
@@ -170,8 +169,8 @@ bool cServer::InitServer(cSettingsRepositoryInterface & a_Settings, bool a_Shoul
 		return false;
 	}
 
-	LOGINFO("Compatible clients: %s", MCS_CLIENT_VERSIONS);
-	LOGD("Compatible protocol versions %s", MCS_PROTOCOL_VERSIONS);
+	LOGINFO("Compatible clients: 1.12.2");
+	LOGD("Compatible protocol versions 340");
 
 	m_Ports = ReadUpgradeIniPorts(a_Settings, "Server", "Ports", "Port", "PortsIPv6", "25565");
 
@@ -236,44 +235,25 @@ bool cServer::InitServer(cSettingsRepositoryInterface & a_Settings, bool a_Shoul
 
 
 
-bool cServer::RegisterForgeMod(const AString & a_ModName, const AString & a_ModVersion, UInt32 a_ProtocolVersionNumber)
+bool cServer::RegisterForgeMod(const AString & a_ModName, const AString & a_ModVersion)
 {
-	auto & Mods = RegisteredForgeMods(a_ProtocolVersionNumber);
-
-	return Mods.insert({a_ModName, a_ModVersion}).second;
+	return m_ForgeMods.insert({a_ModName, a_ModVersion}).second;
 }
 
 
-
-
-
-void cServer::UnregisterForgeMod(const AString & a_ModName, UInt32 a_ProtocolVersionNumber)
+void cServer::UnregisterForgeMod(const AString & a_ModName)
 {
-	auto & Mods = RegisteredForgeMods(a_ProtocolVersionNumber);
-
-	auto it = Mods.find(a_ModName);
-	if (it != Mods.end())
+	auto it = m_ForgeMods.find(a_ModName);
+	if (it != m_ForgeMods.end())
 	{
-		Mods.erase(it);
+		m_ForgeMods.erase(it);
 	}
 }
 
 
-
-
-
-AStringMap & cServer::RegisteredForgeMods(const UInt32 a_Protocol)
+const AStringMap & cServer::GetRegisteredForgeMods()
 {
-	auto it = m_ForgeModsByVersion.find(a_Protocol);
-
-	if (it == m_ForgeModsByVersion.end())
-	{
-		AStringMap mods;
-		m_ForgeModsByVersion.insert({a_Protocol, mods});
-		return m_ForgeModsByVersion.find(a_Protocol)->second;
-	}
-
-	return it->second;
+	return m_ForgeMods;
 }
 
 

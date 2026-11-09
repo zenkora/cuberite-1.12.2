@@ -1,7 +1,7 @@
 // ProtocolRecognizer.cpp
 
-// Implements the cProtocolRecognizer class representing the meta-protocol that recognizes possibly multiple
-// protocol versions and redirects everything to them
+// Implements the cProtocolRecognizer class representing the meta-protocol that recognizes
+// the 1.12.2 protocol version and redirects everything to it
 
 #include "Globals.h"
 
@@ -45,8 +45,6 @@ AString cMultiVersionProtocol::GetVersionTextFromInt(cProtocol::Version a_Protoc
 
 void cMultiVersionProtocol::HandleIncomingDataInRecognitionStage(cClientHandle & a_Client, ContiguousByteBuffer & a_Data)
 {
-	// NOTE: If a new protocol is added or an old one is removed, adjust MCS_CLIENT_VERSIONS and MCS_PROTOCOL_VERSIONS macros in the header file
-
 	/* Write all incoming data unmodified into m_Buffer.
 	Writing everything is always okay to do:
 	1. We can be sure protocol encryption hasn't started yet since m_Protocol hasn't been called, hence no decryption needs to take place
@@ -61,9 +59,6 @@ void cMultiVersionProtocol::HandleIncomingDataInRecognitionStage(cClientHandle &
 	{
 		return;
 	}
-
-	// TODO: recover from git history
-	// Unlengthed protocol, ...
 
 	// Lengthed protocol, try if it has the entire initial handshake packet:
 	if (
@@ -236,7 +231,7 @@ std::unique_ptr<cProtocol> cMultiVersionProtocol::TryRecognizeLengthedProtocol(c
 			a_Client.GetIPString().c_str(), PacketType
 		);
 
-		throw TriedToJoinWithUnsupportedProtocolException("Your client isn't supported.\nTry connecting with Minecraft " MCS_CLIENT_VERSIONS);
+		throw TriedToJoinWithUnsupportedProtocolException("Your client isn't supported.\nTry connecting with Minecraft 1.12.2");
 	}
 
 	if (
@@ -258,7 +253,7 @@ std::unique_ptr<cProtocol> cMultiVersionProtocol::TryRecognizeLengthedProtocol(c
 			case 1:  return cProtocol::State::Status;
 			case 2:  return cProtocol::State::Login;
 			case 3:  return cProtocol::State::Game;
-			default: throw TriedToJoinWithUnsupportedProtocolException("Your client isn't supported.\nTry connecting with Minecraft " MCS_CLIENT_VERSIONS);
+			default: throw TriedToJoinWithUnsupportedProtocolException("Your client isn't supported.\nTry connecting with Minecraft 1.12.2");
 		}
 	}();
 
@@ -281,8 +276,8 @@ std::unique_ptr<cProtocol> cMultiVersionProtocol::TryRecognizeLengthedProtocol(c
 			if (NextState != cProtocol::State::Status)
 			{
 				throw TriedToJoinWithUnsupportedProtocolException(
-					fmt::format(FMT_STRING("Unsupported protocol version {}.\nTry connecting with Minecraft {}"),
-					ProtocolVersion, MCS_CLIENT_VERSIONS)
+					fmt::format(FMT_STRING("Unsupported protocol version {}.\nTry connecting with Minecraft 1.12.2"),
+					ProtocolVersion)
 				);
 			}
 
@@ -340,8 +335,8 @@ void cMultiVersionProtocol::HandlePacketStatusRequest(cClientHandle & a_Client)
 
 	// Version:
 	Json::Value Version;
-	Version["name"] = "Cuberite " MCS_CLIENT_VERSIONS;
-	Version["protocol"] = MCS_LATEST_PROTOCOL_VERSION;
+	Version["name"] = "Cuberite 1.12.2";
+	Version["protocol"] = 340;
 
 	// Players:
 	Json::Value Players;

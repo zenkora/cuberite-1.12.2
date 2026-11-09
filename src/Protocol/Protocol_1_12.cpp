@@ -1,12 +1,6 @@
-
 // Protocol_1_12.cpp
 
-/*
-Implements the 1.12 protocol classes:
-- release 1.12 protocol (#335)
-- release 1.12.1 protocol (#338)
-- release 1.12.2 protocol (#340)
-*/
+/* Implements the 1.12.2 protocol class */
 
 #include "Globals.h"
 #include "Protocol_1_12.h"
@@ -30,8 +24,6 @@ Implements the 1.12 protocol classes:
 #include "../CraftingRecipes.h"
 #include "../Bindings/PluginManager.h"
 #include "../JsonUtils.h"
-
-
 
 
 
@@ -311,12 +303,10 @@ namespace Metadata_1_12
 
 
 
-
-
 ////////////////////////////////////////////////////////////////////////////////
-// cProtocol_1_12:
+// cProtocol_1_12_2:
 
-void cProtocol_1_12::WriteEntityMetadata(cPacketizer & a_Pkt, const cEntity & a_Entity) const
+void cProtocol_1_12_2::WriteEntityMetadata(cPacketizer & a_Pkt, const cEntity & a_Entity) const
 {
 	using namespace Metadata_1_12;
 
@@ -500,506 +490,642 @@ void cProtocol_1_12::WriteEntityMetadata(cPacketizer & a_Pkt, const cEntity & a_
 			a_Pkt.WriteBEInt8(BOAT_LEFT_PADDLE_TURNING);
 			a_Pkt.WriteBEInt8(METADATA_TYPE_BOOL);
 			a_Pkt.WriteBool(Boat.IsLeftPaddleUsed());
-
 			break;
-		}  // case etBoat
-
-		case cEntity::etItemFrame:
-		{
-			auto & Frame = static_cast<const cItemFrame &>(a_Entity);
-			a_Pkt.WriteBEUInt8(ITEM_FRAME_ITEM);
-			a_Pkt.WriteBEUInt8(METADATA_TYPE_ITEM);
-			WriteItem(a_Pkt, Frame.GetItem());
-			a_Pkt.WriteBEUInt8(ITEM_FRAME_ROTATION);
-			a_Pkt.WriteBEUInt8(METADATA_TYPE_VARINT);
-			a_Pkt.WriteVarInt32(Frame.GetItemRotation());
-			break;
-		}  // case etItemFrame
+		}
 
 		case cEntity::etEnderCrystal:
 		{
-			const auto & EnderCrystal = static_cast<const cEnderCrystal &>(a_Entity);
-			if (EnderCrystal.DisplaysBeam())
+			auto & Crystal = static_cast<const cEnderCrystal &>(a_Entity);
+			if (Crystal.GetBeamTarget().has_value())
 			{
 				a_Pkt.WriteBEUInt8(ENDER_CRYSTAL_BEAM_TARGET);
-				a_Pkt.WriteBEUInt8(METADATA_TYPE_OPTIONAL_POSITION);
-				a_Pkt.WriteBool(true);  // Dont do a second check if it should display the beam
-				a_Pkt.WriteXYZPosition64(EnderCrystal.GetBeamTarget());
+				a_Pkt.WriteBEUInt8(METADATA_TYPE_POSITION);
+				a_Pkt.WritePosition(Crystal.GetBeamTarget()->Added(0, 1, 0));
 			}
+
 			a_Pkt.WriteBEUInt8(ENDER_CRYSTAL_SHOW_BOTTOM);
 			a_Pkt.WriteBEUInt8(METADATA_TYPE_BOOL);
-			a_Pkt.WriteBool(EnderCrystal.ShowsBottom());
-			break;
-		}  // case etEnderCrystal
-
-		default:
-		{
+			a_Pkt.WriteBool(Crystal.GetShowBottom());
 			break;
 		}
+
+		case cEntity::etItemFrame:
+		{
+			auto & ItemFrame = static_cast<const cItemFrame &>(a_Entity);
+			a_Pkt.WriteBEUInt8(ITEM_FRAME_ITEM);
+			a_Pkt.WriteBEUInt8(METADATA_TYPE_ITEM);
+			WriteItem(a_Pkt, ItemFrame.GetItem());
+
+			a_Pkt.WriteBEUInt8(ITEM_FRAME_ROTATION);
+			a_Pkt.WriteBEUInt8(METADATA_TYPE_VARINT);
+			a_Pkt.WriteVarInt32(ItemFrame.GetItemRotation());
+			break;
+		}
+
+		case cEntity::etAreaEffectCloud:
+		{
+			auto & Cloud = static_cast<const cAreaEffectCloud &>(a_Entity);
+			a_Pkt.WriteBEUInt8(AREA_EFFECT_CLOUD_RADIUS);
+			a_Pkt.WriteBEUInt8(METADATA_TYPE_FLOAT);
+			a_Pkt.WriteBEFloat(static_cast<float>(Cloud.GetRadius()));
+
+			a_Pkt.WriteBEUInt8(AREA_EFFECT_CLOUD_COLOR);
+			a_Pkt.WriteBEUInt8(METADATA_TYPE_VARINT);
+			a_Pkt.WriteVarInt32(static_cast<UInt32>(Cloud.GetColor()));
+
+			a_Pkt.WriteBEUInt8(AREA_EFFECT_CLOUD_SINGLE_POINT_EFFECT);
+			a_Pkt.WriteBEUInt8(METADATA_TYPE_BOOL);
+			a_Pkt.WriteBool(Cloud.IsSinglePointEffect());
+
+			a_Pkt.WriteBEUInt8(AREA_EFFECT_CLOUD_PARTICLE_ID);
+			a_Pkt.WriteBEUInt8(METADATA_TYPE_VARINT);
+			a_Pkt.WriteVarInt32(static_cast<UInt32>(Cloud.GetParticleId()));
+
+			if (Cloud.GetParticleParameter1().has_value())
+			{
+				a_Pkt.WriteBEUInt8(AREA_EFFECT_CLOUD_PARTICLE_PARAMETER1);
+				a_Pkt.WriteBEUInt8(METADATA_TYPE_VARINT);
+				a_Pkt.WriteVarInt32(static_cast<UInt32>(Cloud.GetParticleParameter1().value()));
+			}
+
+			if (Cloud.GetParticleParameter2().has_value())
+			{
+				a_Pkt.WriteBEUInt8(AREA_EFFECT_CLOUD_PARTICLE_PARAMETER2);
+				a_Pkt.WriteBEUInt8(METADATA_TYPE_VARINT);
+				a_Pkt.WriteVarInt32(static_cast<UInt32>(Cloud.GetParticleParameter2().value()));
+			}
+			break;
+		}
+
+		default:
+			break;
+	}  // switch (a_Entity.GetEntityType())
+
+	// Living common metadata:
+	if (a_Entity.GetEntityType() == cEntity::etPlayer || a_Entity.GetEntityType() == cEntity::etMonster)
+	{
+		auto & Living = static_cast<const cPawn &>(a_Entity);
+
+		if (Living.IsBaby())
+		{
+			a_Pkt.WriteBEUInt8(AGEABLE_BABY);
+			a_Pkt.WriteBEUInt8(METADATA_TYPE_BOOL);
+			a_Pkt.WriteBool(true);
+		}
+
+		if (Living.GetActiveHand() == cPawn::ahMainHand)
+		{
+			a_Pkt.WriteBEUInt8(LIVING_ACTIVE_HAND);
+			a_Pkt.WriteBEUInt8(METADATA_TYPE_BYTE);
+			a_Pkt.WriteBEUInt8(0);
+		}
+		else
+		{
+			a_Pkt.WriteBEUInt8(LIVING_ACTIVE_HAND);
+			a_Pkt.WriteBEUInt8(METADATA_TYPE_BYTE);
+			a_Pkt.WriteBEUInt8(1);
+		}
+
+		a_Pkt.WriteBEUInt8(LIVING_HEALTH);
+		a_Pkt.WriteBEUInt8(METADATA_TYPE_FLOAT);
+		a_Pkt.WriteBEFloat(static_cast<float>(Living.GetHealth()));
+
+		a_Pkt.WriteBEUInt8(LIVING_POTION_EFFECT_COLOR);
+		a_Pkt.WriteBEUInt8(METADATA_TYPE_VARINT);
+		a_Pkt.WriteVarInt32(static_cast<UInt32>(Living.GetPotionColor()));
+
+		a_Pkt.WriteBEUInt8(LIVING_POTION_EFFECT_AMBIENT);
+		a_Pkt.WriteBEUInt8(METADATA_TYPE_BOOL);
+		a_Pkt.WriteBool(Living.IsPotionAmbient());
+
+		a_Pkt.WriteBEUInt8(LIVING_NUMBER_OF_ARROWS);
+		a_Pkt.WriteBEUInt8(METADATA_TYPE_VARINT);
+		a_Pkt.WriteVarInt32(static_cast<UInt32>(Living.GetArrowCount()));
 	}
 }
 
 
-
-
-
-void cProtocol_1_12::WriteMobMetadata(cPacketizer & a_Pkt, const cMonster & a_Mob) const
+void cProtocol_1_12_2::WriteMobMetadata(cPacketizer & a_Pkt, const cMonster & a_Mob) const
 {
 	using namespace Metadata_1_12;
 
-	// Living entity metadata
-	if (a_Mob.HasCustomName())
-	{
-		// TODO: As of 1.9 _all_ entities can have custom names; should this be moved up?
-		a_Pkt.WriteBEUInt8(ENTITY_CUSTOM_NAME);
-		a_Pkt.WriteBEUInt8(METADATA_TYPE_STRING);
-		a_Pkt.WriteString(a_Mob.GetCustomName());
-
-		a_Pkt.WriteBEUInt8(ENTITY_CUSTOM_NAME_VISIBLE);  // Custom name always visible
-		a_Pkt.WriteBEUInt8(METADATA_TYPE_BOOL);
-		a_Pkt.WriteBool(a_Mob.IsCustomNameAlwaysVisible());
-	}
-
-	a_Pkt.WriteBEUInt8(LIVING_HEALTH);
-	a_Pkt.WriteBEUInt8(METADATA_TYPE_FLOAT);
-	a_Pkt.WriteBEFloat(static_cast<float>(a_Mob.GetHealth()));
+	WriteEntityMetadata(a_Pkt, a_Mob);
 
 	switch (a_Mob.GetMobType())
 	{
 		case mtBat:
 		{
-			auto & Bat = static_cast<const cBat &>(a_Mob);
 			a_Pkt.WriteBEUInt8(BAT_HANGING);
 			a_Pkt.WriteBEUInt8(METADATA_TYPE_BYTE);
-			a_Pkt.WriteBEInt8(Bat.IsHanging() ? 1 : 0);
+			a_Pkt.WriteBEUInt8(static_cast<UInt8>(a_Mob.IsHanging() ? 1 : 0));
 			break;
-		}  // case mtBat
-
-		case mtChicken:
-		{
-			auto & Chicken = static_cast<const cChicken &>(a_Mob);
-
-			a_Pkt.WriteBEUInt8(AGEABLE_BABY);
-			a_Pkt.WriteBEUInt8(METADATA_TYPE_BOOL);
-			a_Pkt.WriteBool(Chicken.IsBaby());
-			break;
-		}  // case mtChicken
-
-		case mtCow:
-		{
-			auto & Cow = static_cast<const cCow &>(a_Mob);
-
-			a_Pkt.WriteBEUInt8(AGEABLE_BABY);
-			a_Pkt.WriteBEUInt8(METADATA_TYPE_BOOL);
-			a_Pkt.WriteBool(Cow.IsBaby());
-			break;
-		}  // case mtCow
-
-		case mtCreeper:
-		{
-			auto & Creeper = static_cast<const cCreeper &>(a_Mob);
-			a_Pkt.WriteBEUInt8(CREEPER_STATE);  // (idle or "blowing")
-			a_Pkt.WriteBEUInt8(METADATA_TYPE_VARINT);
-			a_Pkt.WriteVarInt32(Creeper.IsBlowing() ? 1 : static_cast<UInt32>(-1));
-
-			a_Pkt.WriteBEUInt8(CREEPER_POWERED);
-			a_Pkt.WriteBEUInt8(METADATA_TYPE_BOOL);
-			a_Pkt.WriteBool(Creeper.IsCharged());
-
-			a_Pkt.WriteBEUInt8(CREEPER_IGNITED);
-			a_Pkt.WriteBEUInt8(METADATA_TYPE_BOOL);
-			a_Pkt.WriteBool(Creeper.IsBurnedWithFlintAndSteel());
-			break;
-		}  // case mtCreeper
-
-		case mtEnderman:
-		{
-			auto & Enderman = static_cast<const cEnderman &>(a_Mob);
-			a_Pkt.WriteBEUInt8(ENDERMAN_CARRIED_BLOCK);
-			a_Pkt.WriteBEUInt8(METADATA_TYPE_BLOCKID);
-			UInt32 Carried = 0;
-			Carried |= static_cast<UInt32>(Enderman.GetCarriedBlock() << 4);
-			Carried |= Enderman.GetCarriedMeta();
-			a_Pkt.WriteVarInt32(Carried);
-
-			a_Pkt.WriteBEUInt8(ENDERMAN_SCREAMING);
-			a_Pkt.WriteBEUInt8(METADATA_TYPE_BOOL);
-			a_Pkt.WriteBool(Enderman.IsScreaming());
-			break;
-		}  // case mtEnderman
-
-		case mtGhast:
-		{
-			auto & Ghast = static_cast<const cGhast &>(a_Mob);
-			a_Pkt.WriteBEUInt8(GHAST_ATTACKING);
-			a_Pkt.WriteBEUInt8(METADATA_TYPE_BOOL);
-			a_Pkt.WriteBool(Ghast.IsCharging());
-			break;
-		}  // case mtGhast
-
-		case mtHorse:
-		{
-			// XXX This behaves incorrectly with different variants; horses have different entity IDs now
-
-			// Abstract horse
-			auto & Horse = static_cast<const cHorse &>(a_Mob);
-			Int8 Flags = 0;
-			if (Horse.IsTame())
-			{
-				Flags |= 0x02;
-			}
-			if (Horse.IsSaddled())
-			{
-				Flags |= 0x04;
-			}
-			if (Horse.IsChested())
-			{
-				Flags |= 0x08;
-			}
-			if (Horse.IsEating())
-			{
-				Flags |= 0x20;
-			}
-			if (Horse.IsRearing())
-			{
-				Flags |= 0x40;
-			}
-			if (Horse.IsMthOpen())
-			{
-				Flags |= 0x80;
-			}
-			a_Pkt.WriteBEUInt8(ABSTRACT_HORSE_STATUS);
-			a_Pkt.WriteBEUInt8(METADATA_TYPE_BYTE);
-			a_Pkt.WriteBEInt8(Flags);
-
-			// This doesn't exist any more; it'll cause horses to all be the normal type
-			// a_Pkt.WriteBEUInt8(HORSE_TYPE);
-			// a_Pkt.WriteBEUInt8(METADATA_TYPE_VARINT);
-			// a_Pkt.WriteVarInt32(static_cast<UInt32>(Horse.GetHorseType()));
-
-			// Regular horses
-			a_Pkt.WriteBEUInt8(HORSE_VARIANT);  // Color / style
-			a_Pkt.WriteBEUInt8(METADATA_TYPE_VARINT);
-			int Appearance = 0;
-			Appearance = Horse.GetHorseColor();
-			Appearance |= Horse.GetHorseStyle() << 8;
-			a_Pkt.WriteVarInt32(static_cast<UInt32>(Appearance));
-
-			a_Pkt.WriteBEUInt8(HORSE_ARMOR);
-			a_Pkt.WriteBEUInt8(METADATA_TYPE_VARINT);
-			a_Pkt.WriteVarInt32(static_cast<UInt32>(Horse.GetHorseArmour()));
-
-			a_Pkt.WriteBEUInt8(AGEABLE_BABY);
-			a_Pkt.WriteBEUInt8(METADATA_TYPE_BOOL);
-			a_Pkt.WriteBool(Horse.IsBaby());
-			break;
-		}  // case mtHorse
-
-		case mtMagmaCube:
-		{
-			auto & MagmaCube = static_cast<const cMagmaCube &>(a_Mob);
-			a_Pkt.WriteBEUInt8(SLIME_SIZE);
-			a_Pkt.WriteBEUInt8(METADATA_TYPE_VARINT);
-			a_Pkt.WriteVarInt32(static_cast<UInt32>(MagmaCube.GetSize()));
-			break;
-		}  // case mtMagmaCube
-
-		case mtOcelot:
-		{
-			auto & Ocelot = static_cast<const cOcelot &>(a_Mob);
-
-			a_Pkt.WriteBEUInt8(AGEABLE_BABY);
-			a_Pkt.WriteBEUInt8(METADATA_TYPE_BOOL);
-			a_Pkt.WriteBool(Ocelot.IsBaby());
-
-			Int8 OcelotStatus = 0;
-			if (Ocelot.IsSitting())
-			{
-				OcelotStatus |= 0x1;
-			}
-			if (Ocelot.IsTame())
-			{
-				OcelotStatus |= 0x4;
-			}
-			a_Pkt.WriteBEUInt8(TAMEABLE_ANIMAL_STATUS);
-			a_Pkt.WriteBEUInt8(METADATA_TYPE_BYTE);
-			a_Pkt.WriteBEInt8(OcelotStatus);
-
-			a_Pkt.WriteBEUInt8(OCELOT_TYPE);
-			a_Pkt.WriteBEUInt8(METADATA_TYPE_VARINT);
-			a_Pkt.WriteVarInt32(static_cast<UInt32>(Ocelot.GetOcelotType()));
-
-			break;
-		}  // case mtOcelot
-
-		case mtPig:
-		{
-			auto & Pig = static_cast<const cPig &>(a_Mob);
-
-			a_Pkt.WriteBEUInt8(AGEABLE_BABY);
-			a_Pkt.WriteBEUInt8(METADATA_TYPE_BOOL);
-			a_Pkt.WriteBool(Pig.IsBaby());
-
-			a_Pkt.WriteBEUInt8(PIG_HAS_SADDLE);
-			a_Pkt.WriteBEUInt8(METADATA_TYPE_BOOL);
-			a_Pkt.WriteBool(Pig.IsSaddled());
-
-			// PIG_TOTAL_CARROT_ON_A_STICK_BOOST in 1.11.1 only
-			break;
-		}  // case mtPig
-
-		case mtRabbit:
-		{
-			auto & Rabbit = static_cast<const cRabbit &>(a_Mob);
-			a_Pkt.WriteBEUInt8(AGEABLE_BABY);
-			a_Pkt.WriteBEUInt8(METADATA_TYPE_BOOL);
-			a_Pkt.WriteBool(Rabbit.IsBaby());
-
-			a_Pkt.WriteBEUInt8(RABBIT_TYPE);
-			a_Pkt.WriteBEUInt8(METADATA_TYPE_VARINT);
-			a_Pkt.WriteVarInt32(static_cast<UInt32>(Rabbit.GetRabbitType()));
-			break;
-		}  // case mtRabbit
-
-		case mtSheep:
-		{
-			auto & Sheep = static_cast<const cSheep &>(a_Mob);
-
-			a_Pkt.WriteBEUInt8(AGEABLE_BABY);
-			a_Pkt.WriteBEUInt8(METADATA_TYPE_BOOL);
-			a_Pkt.WriteBool(Sheep.IsBaby());
-
-			a_Pkt.WriteBEUInt8(SHEEP_STATUS);
-			a_Pkt.WriteBEUInt8(METADATA_TYPE_BYTE);
-			Int8 SheepMetadata = 0;
-			SheepMetadata = static_cast<Int8>(Sheep.GetFurColor());
-			if (Sheep.IsSheared())
-			{
-				SheepMetadata |= 0x10;
-			}
-			a_Pkt.WriteBEInt8(SheepMetadata);
-			break;
-		}  // case mtSheep
-
-		case mtSkeleton:
-		{
-			auto & Skeleton = static_cast<const cSkeleton &>(a_Mob);
-			a_Pkt.WriteBEUInt8(LIVING_ACTIVE_HAND);
-			a_Pkt.WriteBEUInt8(METADATA_TYPE_BYTE);
-			a_Pkt.WriteBEUInt8(Skeleton.IsChargingBow() ? 0x01 : 0x00);
-
-			a_Pkt.WriteBEUInt8(ABSTRACT_SKELETON_ARMS_SWINGING);
-			a_Pkt.WriteBEUInt8(METADATA_TYPE_BOOL);
-			a_Pkt.WriteBool(Skeleton.IsChargingBow());
-			break;
-		}  // case mtSkeleton
-
-		case mtSlime:
-		{
-			auto & Slime = static_cast<const cSlime &>(a_Mob);
-			a_Pkt.WriteBEUInt8(SLIME_SIZE);
-			a_Pkt.WriteBEUInt8(METADATA_TYPE_VARINT);
-			a_Pkt.WriteVarInt32(static_cast<UInt32>(Slime.GetSize()));
-			break;
-		}  // case mtSlime
-
-		case mtVillager:
-		{
-			auto & Villager = static_cast<const cVillager &>(a_Mob);
-			a_Pkt.WriteBEUInt8(AGEABLE_BABY);
-			a_Pkt.WriteBEUInt8(METADATA_TYPE_BOOL);
-			a_Pkt.WriteBool(Villager.IsBaby());
-
-			a_Pkt.WriteBEUInt8(VILLAGER_PROFESSION);
-			a_Pkt.WriteBEUInt8(METADATA_TYPE_VARINT);
-			a_Pkt.WriteVarInt32(static_cast<UInt32>(Villager.GetVilType()));
-			break;
-		}  // case mtVillager
-
-		case mtWitch:
-		{
-			auto & Witch = static_cast<const cWitch &>(a_Mob);
-			a_Pkt.WriteBEUInt8(WITCH_AGGRESIVE);
-			a_Pkt.WriteBEUInt8(METADATA_TYPE_BOOL);
-			a_Pkt.WriteBool(Witch.IsAngry());
-			break;
-		}  // case mtWitch
-
-		case mtWither:
-		{
-			auto & Wither = static_cast<const cWither &>(a_Mob);
-			a_Pkt.WriteBEUInt8(WITHER_INVULNERABLE_TIMER);
-			a_Pkt.WriteBEUInt8(METADATA_TYPE_VARINT);
-			a_Pkt.WriteVarInt32(Wither.GetWitherInvulnerableTicks());
-
-			// TODO: Use boss bar packet for health
-			break;
-		}  // case mtWither
+		}
 
 		case mtWolf:
 		{
-			auto & Wolf = static_cast<const cWolf &>(a_Mob);
-			a_Pkt.WriteBEUInt8(AGEABLE_BABY);
-			a_Pkt.WriteBEUInt8(METADATA_TYPE_BOOL);
-			a_Pkt.WriteBool(Wolf.IsBaby());
-
-			Int8 WolfStatus = 0;
-			if (Wolf.IsSitting())
-			{
-				WolfStatus |= 0x1;
-			}
-			if (Wolf.IsAngry())
-			{
-				WolfStatus |= 0x2;
-			}
-			if (Wolf.IsTame())
-			{
-				WolfStatus |= 0x4;
-			}
 			a_Pkt.WriteBEUInt8(TAMEABLE_ANIMAL_STATUS);
 			a_Pkt.WriteBEUInt8(METADATA_TYPE_BYTE);
-			a_Pkt.WriteBEInt8(WolfStatus);
+			UInt8 Flags = 0;
+			if (a_Mob.IsTame())
+			{
+				Flags |= 0x04;
+			}
+			if (a_Mob.IsSitting())
+			{
+				Flags |= 0x01;
+			}
+			a_Pkt.WriteBEInt8(Flags);
+
+			if (a_Mob.IsTame())
+			{
+				a_Pkt.WriteBEUInt8(TAMEABLE_ANIMAL_OWNER);
+				a_Pkt.WriteBEUInt8(METADATA_TYPE_OPT_UUID);
+				a_Pkt.WriteOptionalUUID(a_Mob.GetOwnerUUID());
+			}
 
 			a_Pkt.WriteBEUInt8(WOLF_DAMAGE_TAKEN);
 			a_Pkt.WriteBEUInt8(METADATA_TYPE_FLOAT);
-			a_Pkt.WriteBEFloat(static_cast<float>(a_Mob.GetHealth()));  // TODO Not use the current health
+			a_Pkt.WriteBEFloat(static_cast<float>(a_Mob.GetHealth()));
 
 			a_Pkt.WriteBEUInt8(WOLF_BEGGING);
 			a_Pkt.WriteBEUInt8(METADATA_TYPE_BOOL);
-			a_Pkt.WriteBool(Wolf.IsBegging());
+			a_Pkt.WriteBool(a_Mob.IsBegging());
 
 			a_Pkt.WriteBEUInt8(WOLF_COLLAR_COLOR);
 			a_Pkt.WriteBEUInt8(METADATA_TYPE_VARINT);
-			a_Pkt.WriteVarInt32(static_cast<UInt32>(Wolf.GetCollarColor()));
-			break;
-		}  // case mtWolf
-
-		case mtZombie:
-		{
-			// XXX Zombies were also split into new subclasses; this doesn't handle that.
-			auto & Zombie = static_cast<const cZombie &>(a_Mob);
-			a_Pkt.WriteBEUInt8(ZOMBIE_IS_BABY);
-			a_Pkt.WriteBEUInt8(METADATA_TYPE_BOOL);
-			a_Pkt.WriteBool(Zombie.IsBaby());
-
-			// These don't exist
-			// a_Pkt.WriteBEUInt8(ZOMBIE_TYPE);
-			// a_Pkt.WriteBEUInt8(METADATA_TYPE_VARINT);
-			// a_Pkt.WriteVarInt32(Zombie.IsVillagerZombie() ? 1 : 0);
-
-			break;
-		}  // case mtZombie
-
-		case mtZombiePigman:
-		{
-			auto & ZombiePigman = static_cast<const cZombiePigman &>(a_Mob);
-			a_Pkt.WriteBEUInt8(AGEABLE_BABY);
-			a_Pkt.WriteBEUInt8(METADATA_TYPE_BOOL);
-			a_Pkt.WriteBool(ZombiePigman.IsBaby());
-			break;
-		}  // case mtZombiePigman
-
-		case mtZombieVillager:
-		{
-			auto & ZombieVillager = reinterpret_cast<const cZombieVillager &>(a_Mob);
-			a_Pkt.WriteBEUInt8(ZOMBIE_IS_BABY);
-			a_Pkt.WriteBEUInt8(METADATA_TYPE_BOOL);
-			a_Pkt.WriteBool(ZombieVillager.IsBaby());
-
-			a_Pkt.WriteBEUInt8(ZOMBIE_VILLAGER_CONVERTING);
-			a_Pkt.WriteBEUInt8(METADATA_TYPE_VARINT);
-			a_Pkt.WriteVarInt32(static_cast<UInt32>(ZombieVillager.ConversionTime()));
-
-			a_Pkt.WriteBEUInt8(ZOMBIE_VILLAGER_PROFESSION);
-			a_Pkt.WriteBEUInt8(METADATA_TYPE_VARINT);
-			a_Pkt.WriteVarInt32(static_cast<UInt32>(ZombieVillager.GetProfession()));
-			break;
-		}  // case mtZombieVillager
-
-		case mtBlaze:
-		case mtCaveSpider:
-		case mtElderGuardian:
-		case mtEnderDragon:
-		case mtGuardian:
-		case mtIronGolem:
-		case mtSnowGolem:
-		case mtSpider:
-		case mtWitherSkeleton:
-		{
-			// TODO: Mobs with extra fields that aren't implemented
+			a_Pkt.WriteVarInt32(static_cast<UInt32>(a_Mob.GetCollarColor()));
 			break;
 		}
 
-		case mtMooshroom:
+		case mtOcelot:
 		{
-			// Not mentioned on http://wiki.vg/Entities
+			a_Pkt.WriteBEUInt8(TAMEABLE_ANIMAL_STATUS);
+			a_Pkt.WriteBEUInt8(METADATA_TYPE_BYTE);
+			UInt8 Flags = 0;
+			if (a_Mob.IsTame())
+			{
+				Flags |= 0x04;
+			}
+			if (a_Mob.IsSitting())
+			{
+				Flags |= 0x01;
+			}
+			a_Pkt.WriteBEInt8(Flags);
+
+			if (a_Mob.IsTame())
+			{
+				a_Pkt.WriteBEUInt8(TAMEABLE_ANIMAL_OWNER);
+				a_Pkt.WriteBEUInt8(METADATA_TYPE_OPT_UUID);
+				a_Pkt.WriteOptionalUUID(a_Mob.GetOwnerUUID());
+			}
+
+			a_Pkt.WriteBEUInt8(OCELOT_TYPE);
+			a_Pkt.WriteBEUInt8(METADATA_TYPE_VARINT);
+			a_Pkt.WriteVarInt32(static_cast<UInt32>(a_Mob.GetOcelotType()));
 			break;
 		}
-
-		case mtCat:
-
-		case mtDonkey:
-		case mtMule:
-
-		case mtEvoker:
-
-		case mtHusk:
-
-		case mtLlama:
 
 		case mtParrot:
 		{
-			auto & Parrot = static_cast<const cParrot &>(a_Mob);
-
-			a_Pkt.WriteBEUInt8(AGEABLE_BABY);
-			a_Pkt.WriteBEUInt8(METADATA_TYPE_BOOL);
-			a_Pkt.WriteBool(Parrot.IsBaby());
-
-			Int8 TameableStatus = 0;
-			if (Parrot.IsSitting())
-			{
-				TameableStatus |= 0x1;
-			}
-			if (Parrot.IsTame())
-			{
-				TameableStatus |= 0x4;
-			}
 			a_Pkt.WriteBEUInt8(TAMEABLE_ANIMAL_STATUS);
 			a_Pkt.WriteBEUInt8(METADATA_TYPE_BYTE);
-			a_Pkt.WriteBEInt8(TameableStatus);
+			UInt8 Flags = 0;
+			if (a_Mob.IsTame())
+			{
+				Flags |= 0x04;
+			}
+			if (a_Mob.IsSitting())
+			{
+				Flags |= 0x01;
+			}
+			a_Pkt.WriteBEInt8(Flags);
 
-			if (Parrot.IsTame())
+			if (a_Mob.IsTame())
 			{
 				a_Pkt.WriteBEUInt8(TAMEABLE_ANIMAL_OWNER);
-				a_Pkt.WriteBEUInt8(METADATA_TYPE_OPTIONAL_UUID);
-				a_Pkt.WriteBool(true);
-				a_Pkt.WriteUUID(Parrot.GetOwnerUUID());
+				a_Pkt.WriteBEUInt8(METADATA_TYPE_OPT_UUID);
+				a_Pkt.WriteOptionalUUID(a_Mob.GetOwnerUUID());
 			}
 
 			a_Pkt.WriteBEUInt8(PARROT_VARIANT);
-					a_Pkt.WriteBEUInt8(METADATA_TYPE_VARINT);
-					a_Pkt.WriteVarInt32(static_cast<UInt32>(Parrot.GetVariant()));
+			a_Pkt.WriteBEUInt8(METADATA_TYPE_VARINT);
+			a_Pkt.WriteVarInt32(static_cast<UInt32>(a_Mob.GetParrotVariant()));
 			break;
-		}  // case mtParrot
+		}
 
-		case mtShulker:
+		case mtRabbit:
+		{
+			a_Pkt.WriteBEUInt8(RABBIT_TYPE);
+			a_Pkt.WriteBEUInt8(METADATA_TYPE_VARINT);
+			a_Pkt.WriteVarInt32(static_cast<UInt32>(a_Mob.GetRabbitType()));
+			break;
+		}
 
-		case mtSkeletonHorse:
-		case mtZombieHorse:
+		case mtPolarBear:
+		{
+			a_Pkt.WriteBEUInt8(POLAR_BEAR_STANDING);
+			a_Pkt.WriteBEUInt8(METADATA_TYPE_BYTE);
+			a_Pkt.WriteBEUInt8(static_cast<UInt8>(a_Mob.IsStanding() ? 1 : 0));
+			break;
+		}
 
+		case mtHorse:
+		{
+			a_Pkt.WriteBEUInt8(ABSTRACT_HORSE_STATUS);
+			a_Pkt.WriteBEUInt8(METADATA_TYPE_BYTE);
+			UInt8 Flags = 0;
+			if (a_Mob.IsTame())
+			{
+				Flags |= 0x02;
+			}
+			if (a_Mob.IsSaddle())
+			{
+				Flags |= 0x01;
+			}
+			if (a_Mob.IsChested())
+			{
+				Flags |= 0x04;
+			}
+			if (a_Mob.IsBred())
+			{
+				Flags |= 0x08;
+			}
+			if (a_Mob.IsEating())
+			{
+				Flags |= 0x10;
+			}
+			a_Pkt.WriteBEInt8(Flags);
+
+			a_Pkt.WriteBEUInt8(ABSTRACT_HORSE_OWNER);
+			a_Pkt.WriteBEUInt8(METADATA_TYPE_OPT_UUID);
+			a_Pkt.WriteOptionalUUID(a_Mob.GetOwnerUUID());
+
+			a_Pkt.WriteBEUInt8(HORSE_VARIANT);
+			a_Pkt.WriteBEUInt8(METADATA_TYPE_VARINT);
+			a_Pkt.WriteVarInt32(static_cast<UInt32>(a_Mob.GetHorseVariant()));
+
+			a_Pkt.WriteBEUInt8(HORSE_ARMOR);
+			a_Pkt.WriteBEUInt8(METADATA_TYPE_VARINT);
+			a_Pkt.WriteVarInt32(static_cast<UInt32>(a_Mob.GetHorseArmor()));
+			break;
+		}
+
+		case mtDonkey:
+		case mtMule:
+		{
+			a_Pkt.WriteBEUInt8(ABSTRACT_HORSE_STATUS);
+			a_Pkt.WriteBEUInt8(METADATA_TYPE_BYTE);
+			UInt8 Flags = 0;
+			if (a_Mob.IsTame())
+			{
+				Flags |= 0x02;
+			}
+			if (a_Mob.IsSaddle())
+			{
+				Flags |= 0x01;
+			}
+			if (a_Mob.IsChested())
+			{
+				Flags |= 0x04;
+			}
+			if (a_Mob.IsBred())
+			{
+				Flags |= 0x08;
+			}
+			if (a_Mob.IsEating())
+			{
+				Flags |= 0x10;
+			}
+			a_Pkt.WriteBEInt8(Flags);
+
+			a_Pkt.WriteBEUInt8(ABSTRACT_HORSE_OWNER);
+			a_Pkt.WriteBEUInt8(METADATA_TYPE_OPT_UUID);
+			a_Pkt.WriteOptionalUUID(a_Mob.GetOwnerUUID());
+
+			a_Pkt.WriteBEUInt8(CHESTED_HORSE_CHESTED);
+			a_Pkt.WriteBEUInt8(METADATA_TYPE_BOOL);
+			a_Pkt.WriteBool(a_Mob.IsChested());
+			break;
+		}
+
+		case mtLlama:
+		{
+			a_Pkt.WriteBEUInt8(ABSTRACT_HORSE_STATUS);
+			a_Pkt.WriteBEUInt8(METADATA_TYPE_BYTE);
+			UInt8 Flags = 0;
+			if (a_Mob.IsTame())
+			{
+				Flags |= 0x02;
+			}
+			if (a_Mob.IsSaddle())
+			{
+				Flags |= 0x01;
+			}
+			if (a_Mob.IsChested())
+			{
+				Flags |= 0x04;
+			}
+			if (a_Mob.IsBred())
+			{
+				Flags |= 0x08;
+			}
+			if (a_Mob.IsEating())
+			{
+				Flags |= 0x10;
+			}
+			a_Pkt.WriteBEInt8(Flags);
+
+			a_Pkt.WriteBEUInt8(ABSTRACT_HORSE_OWNER);
+			a_Pkt.WriteBEUInt8(METADATA_TYPE_OPT_UUID);
+			a_Pkt.WriteOptionalUUID(a_Mob.GetOwnerUUID());
+
+			a_Pkt.WriteBEUInt8(CHESTED_HORSE_CHESTED);
+			a_Pkt.WriteBEUInt8(METADATA_TYPE_BOOL);
+			a_Pkt.WriteBool(a_Mob.IsChested());
+
+			a_Pkt.WriteBEUInt8(LLAMA_STRENGTH);
+			a_Pkt.WriteBEUInt8(METADATA_TYPE_VARINT);
+			a_Pkt.WriteVarInt32(static_cast<UInt32>(a_Mob.GetLlamaStrength()));
+
+			a_Pkt.WriteBEUInt8(LLAMA_CARPET_COLOR);
+			a_Pkt.WriteBEUInt8(METADATA_TYPE_VARINT);
+			a_Pkt.WriteVarInt32(static_cast<UInt32>(a_Mob.GetLlamaCarpetColor()));
+
+			a_Pkt.WriteBEUInt8(LLAMA_VARIANT);
+			a_Pkt.WriteBEUInt8(METADATA_TYPE_VARINT);
+			a_Pkt.WriteVarInt32(static_cast<UInt32>(a_Mob.GetLlamaVariant()));
+			break;
+		}
+
+		case mtPig:
+		{
+			a_Pkt.WriteBEUInt8(PIG_HAS_SADDLE);
+			a_Pkt.WriteBEUInt8(METADATA_TYPE_BOOL);
+			a_Pkt.WriteBool(a_Mob.HasSaddle());
+
+			// PIG_TOTAL_CARROT_ON_A_STICK_BOOST, 1.11.1 only
+			break;
+		}
+
+		case mtSheep:
+		{
+			a_Pkt.WriteBEUInt8(SHEEP_STATUS);
+			a_Pkt.WriteBEUInt8(METADATA_TYPE_BYTE);
+			UInt8 Flags = 0;
+			if (a_Mob.IsSheared())
+			{
+				Flags |= 0x10;
+			}
+			if (a_Mob.IsReadyToEat())
+			{
+				Flags |= 0x20;
+			}
+			a_Pkt.WriteBEInt8(Flags);
+			break;
+		}
+
+		case mtVillager:
+		{
+			a_Pkt.WriteBEUInt8(VILLAGER_PROFESSION);
+			a_Pkt.WriteBEUInt8(METADATA_TYPE_VARINT);
+			a_Pkt.WriteVarInt32(static_cast<UInt32>(a_Mob.GetVillagerProfession()));
+			break;
+		}
+
+		case mtZombie:
+		case mtZombieVillager:
+		case mtHusk:
+		{
+			a_Pkt.WriteBEUInt8(ZOMBIE_IS_BABY);
+			a_Pkt.WriteBEUInt8(METADATA_TYPE_BOOL);
+			a_Pkt.WriteBool(a_Mob.IsBaby());
+
+			a_Pkt.WriteBEUInt8(ZOMBIE_UNUSED);
+			a_Pkt.WriteBEUInt8(METADATA_TYPE_VARINT);
+			a_Pkt.WriteVarInt32(0);
+
+			a_Pkt.WriteBEUInt8(ZOMBIE_HANDS_RISED_UP);
+			a_Pkt.WriteBEUInt8(METADATA_TYPE_BOOL);
+			a_Pkt.WriteBool(a_Mob.IsRaisingArms());
+
+			if (a_Mob.GetMobType() == mtZombieVillager)
+			{
+				a_Pkt.WriteBEUInt8(ZOMBIE_VILLAGER_CONVERTING);
+				a_Pkt.WriteBEUInt8(METADATA_TYPE_BOOL);
+				a_Pkt.WriteBool(a_Mob.IsConverting());
+
+				a_Pkt.WriteBEUInt8(ZOMBIE_VILLAGER_PROFESSION);
+				a_Pkt.WriteBEUInt8(METADATA_TYPE_VARINT);
+				a_Pkt.WriteVarInt32(static_cast<UInt32>(a_Mob.GetVillagerProfession()));
+			}
+			break;
+		}
+
+		case mtSkeleton:
 		case mtStray:
+		case mtWitherSkeleton:
+		{
+			a_Pkt.WriteBEUInt8(ABSTRACT_SKELETON_ARMS_SWINGING);
+			a_Pkt.WriteBEUInt8(METADATA_TYPE_BOOL);
+			a_Pkt.WriteBool(a_Mob.IsSwingingArms());
+			break;
+		}
+
+		case mtSpider:
+		case mtCaveSpider:
+		{
+			a_Pkt.WriteBEUInt8(SPIDER_CLIMBING);
+			a_Pkt.WriteBEUInt8(METADATA_TYPE_BOOL);
+			a_Pkt.WriteBool(a_Mob.IsClimbing());
+			break;
+		}
+
+		case mtCreeper:
+		{
+			a_Pkt.WriteBEUInt8(CREEPER_STATE);
+			a_Pkt.WriteBEUInt8(METADATA_TYPE_BYTE);
+			a_Pkt.WriteBEUInt8(static_cast<UInt8>(a_Mob.GetCreeperState()));
+
+			a_Pkt.WriteBEUInt8(CREEPER_POWERED);
+			a_Pkt.WriteBEUInt8(METADATA_TYPE_BOOL);
+			a_Pkt.WriteBool(a_Mob.IsPowered());
+
+			a_Pkt.WriteBEUInt8(CREEPER_IGNITED);
+			a_Pkt.WriteBEUInt8(METADATA_TYPE_BOOL);
+			a_Pkt.WriteBool(a_Mob.IsIgnited());
+			break;
+		}
+
+		case mtBlaze:
+		{
+			a_Pkt.WriteBEUInt8(BLAZE_ON_FIRE);
+			a_Pkt.WriteBEUInt8(METADATA_TYPE_BYTE);
+			a_Pkt.WriteBEUInt8(static_cast<UInt8>(a_Mob.IsOnFire() ? 1 : 0));
+			break;
+		}
+
+		case mtGuardian:
+		case mtElderGuardian:
+		{
+			a_Pkt.WriteBEUInt8(GUARDIAN_STATUS);
+			a_Pkt.WriteBEUInt8(METADATA_TYPE_BYTE);
+			UInt8 Flags = 0;
+			if (a_Mob.HasBeamTarget())
+			{
+				Flags |= 0x01;
+			}
+			if (a_Mob.IsElder())
+			{
+				Flags |= 0x02;
+			}
+			a_Pkt.WriteBEInt8(Flags);
+
+			a_Pkt.WriteBEUInt8(GUARDIAN_TARGET);
+			a_Pkt.WriteBEUInt8(METADATA_TYPE_VARINT);
+			if (a_Mob.HasBeamTarget())
+			{
+				a_Pkt.WriteVarInt32(static_cast<UInt32>(a_Mob.GetBeamTarget()->GetUniqueID()));
+			}
+			else
+			{
+				a_Pkt.WriteVarInt32(0);
+			}
+			break;
+		}
+
+		case mtWitch:
+		{
+			a_Pkt.WriteBEUInt8(WITCH_AGGRESIVE);
+			a_Pkt.WriteBEUInt8(METADATA_TYPE_BYTE);
+			a_Pkt.WriteBEUInt8(static_cast<UInt8>(a_Mob.IsAggressive() ? 1 : 0));
+			break;
+		}
+
+		case mtWither:
+		{
+			a_Pkt.WriteBEUInt8(WITHER_FIRST_HEAD_TARGET);
+			a_Pkt.WriteBEUInt8(METADATA_TYPE_VARINT);
+			if (a_Mob.GetTarget(0).has_value())
+			{
+				a_Pkt.WriteVarInt32(static_cast<UInt32>(a_Mob.GetTarget(0).value()->GetUniqueID()));
+			}
+			else
+			{
+				a_Pkt.WriteVarInt32(0);
+			}
+
+			a_Pkt.WriteBEUInt8(WITHER_SECOND_HEAD_TARGET);
+			a_Pkt.WriteBEUInt8(METADATA_TYPE_VARINT);
+			if (a_Mob.GetTarget(1).has_value())
+			{
+				a_Pkt.WriteVarInt32(static_cast<UInt32>(a_Mob.GetTarget(1).value()->GetUniqueID()));
+			}
+			else
+			{
+				a_Pkt.WriteVarInt32(0);
+			}
+
+			a_Pkt.WriteBEUInt8(WITHER_THIRD_HEAD_TARGET);
+			a_Pkt.WriteBEUInt8(METADATA_TYPE_VARINT);
+			if (a_Mob.GetTarget(2).has_value())
+			{
+				a_Pkt.WriteVarInt32(static_cast<UInt32>(a_Mob.GetTarget(2).value()->GetUniqueID()));
+			}
+			else
+			{
+				a_Pkt.WriteVarInt32(0);
+			}
+
+			a_Pkt.WriteBEUInt8(WITHER_INVULNERABLE_TIMER);
+			a_Pkt.WriteBEUInt8(METADATA_TYPE_VARINT);
+			a_Pkt.WriteVarInt32(static_cast<UInt32>(a_Mob.GetInvulnerableTimer()));
+			break;
+		}
+
+		case mtEnderman:
+		{
+			a_Pkt.WriteBEUInt8(ENDERMAN_CARRIED_BLOCK);
+			a_Pkt.WriteBEUInt8(METADATA_TYPE_VARINT);
+			if (a_Mob.GetCarriedBlock().has_value())
+			{
+				a_Pkt.WriteVarInt32(static_cast<UInt32>(a_Mob.GetCarriedBlock().value()));
+			}
+			else
+			{
+				a_Pkt.WriteVarInt32(0);
+			}
+
+			a_Pkt.WriteBEUInt8(ENDERMAN_SCREAMING);
+			a_Pkt.WriteBEUInt8(METADATA_TYPE_BOOL);
+			a_Pkt.WriteBool(a_Mob.IsScreaming());
+			break;
+		}
+
+		case mtEnderDragon:
+		{
+			a_Pkt.WriteBEUInt8(ENDER_DRAGON_DRAGON_PHASE);
+			a_Pkt.WriteBEUInt8(METADATA_TYPE_VARINT);
+			a_Pkt.WriteVarInt32(static_cast<UInt32>(a_Mob.GetDragonPhase()));
+			break;
+		}
+
+		case mtGhast:
+		{
+			a_Pkt.WriteBEUInt8(GHAST_ATTACKING);
+			a_Pkt.WriteBEUInt8(METADATA_TYPE_BYTE);
+			a_Pkt.WriteBEUInt8(static_cast<UInt8>(a_Mob.IsAttacking() ? 1 : 0));
+			break;
+		}
+
+		case mtSlime:
+		case mtMagmaCube:
+		{
+			a_Pkt.WriteBEUInt8(SLIME_SIZE);
+			a_Pkt.WriteBEUInt8(METADATA_TYPE_VARINT);
+			a_Pkt.WriteVarInt32(static_cast<UInt32>(a_Mob.GetSize()));
+			break;
+		}
+
+		case mtEvoker:
+		{
+			a_Pkt.WriteBEUInt8(EVOKER_SPELL);
+			a_Pkt.WriteBEUInt8(METADATA_TYPE_BYTE);
+			a_Pkt.WriteBEUInt8(static_cast<UInt8>(a_Mob.GetSpell()));
+			break;
+		}
 
 		case mtVex:
+		{
+			a_Pkt.WriteBEUInt8(VEX_FLAGS);
+			a_Pkt.WriteBEUInt8(METADATA_TYPE_BYTE);
+			UInt8 Flags = 0;
+			if (a_Mob.IsCharging())
+			{
+				Flags |= 0x01;
+			}
+			a_Pkt.WriteBEInt8(Flags);
+			break;
+		}
 
 		case mtVindicator:
+		{
+			a_Pkt.WriteBEUInt8(VINDICATOR_FLAGS);
+			a_Pkt.WriteBEUInt8(METADATA_TYPE_BYTE);
+			UInt8 Flags = 0;
+			if (a_Mob.IsJohnny())
+			{
+				Flags |= 0x01;
+			}
+			a_Pkt.WriteBEInt8(Flags);
+			break;
+		}
 
 		case mtIllusioner:
 		{
-			auto & Illusioner = static_cast<const cIllusioner &>(a_Mob);
 			a_Pkt.WriteBEUInt8(ILLUSIONER_FLAGS);
 			a_Pkt.WriteBEUInt8(METADATA_TYPE_BYTE);
 			UInt8 Flags = 0;
-			if (Illusioner.IsMirrorImage())
+			if (a_Mob.IsMirrorImage())
 			{
 				Flags |= 0x10;  // Mirror image flag
 			}
@@ -1016,15 +1142,12 @@ void cProtocol_1_12::WriteMobMetadata(cPacketizer & a_Pkt, const cMonster & a_Mo
 			break;
 		}
 
-		default: UNREACHABLE("cProtocol_1_12::WriteMobMetadata: received mob of invalid type");
+		default: UNREACHABLE("cProtocol_1_12_2::WriteMobMetadata: received mob of invalid type");
 	}  // switch (a_Mob.GetType())
 }
 
 
-
-
-
-UInt32 cProtocol_1_12::GetPacketID(cProtocol::ePacketType a_Packet) const
+UInt32 cProtocol_1_12_2::GetPacketID(cProtocol::ePacketType a_Packet) const
 {
 	switch (a_Packet)
 	{
@@ -1063,15 +1186,12 @@ UInt32 cProtocol_1_12::GetPacketID(cProtocol::ePacketType a_Packet) const
 }
 
 
-
-
-
-void cProtocol_1_12::HandleCraftRecipe(cByteBuffer & a_ByteBuffer)
+void cProtocol_1_12_2::HandleCraftRecipe(cByteBuffer & a_ByteBuffer)
 {
 	HANDLE_READ(a_ByteBuffer, ReadBEUInt8, UInt8,  WindowID);
 	HANDLE_READ(a_ByteBuffer, ReadVarInt,  UInt32, RecipeID);
 	HANDLE_READ(a_ByteBuffer, ReadBool,    bool,   MakeAll);
-	auto CuberiteRecipeId = cRoot::Get()->GetRecipeMapper()->GetCuberiteRecipeId(RecipeID, m_Client->GetProtocolVersion());
+	auto CuberiteRecipeId = cRoot::Get()->GetRecipeMapper()->GetCuberiteRecipeId(RecipeID);
 	if (CuberiteRecipeId.has_value())
 	{
 		m_Client->HandleCraftRecipe(CuberiteRecipeId.value());
@@ -1079,10 +1199,7 @@ void cProtocol_1_12::HandleCraftRecipe(cByteBuffer & a_ByteBuffer)
 }
 
 
-
-
-
-void cProtocol_1_12::HandlePacketCraftingBookData(cByteBuffer & a_ByteBuffer)
+void cProtocol_1_12_2::HandlePacketCraftingBookData(cByteBuffer & a_ByteBuffer)
 {
 	// TODO not yet used, not sure if it is needed
 	// https://wiki.vg/index.php?title=Protocol&oldid=14204#Crafting_Book_Data
@@ -1090,20 +1207,14 @@ void cProtocol_1_12::HandlePacketCraftingBookData(cByteBuffer & a_ByteBuffer)
 }
 
 
-
-
-
-void cProtocol_1_12::HandlePacketAdvancementTab(cByteBuffer & a_ByteBuffer)
+void cProtocol_1_12_2::HandlePacketAdvancementTab(cByteBuffer & a_ByteBuffer)
 {
 	a_ByteBuffer.SkipRead(a_ByteBuffer.GetReadableSpace());
 	m_Client->GetPlayer()->SendMessageInfo("The new advancements are not implemented.");
 }
 
 
-
-
-
-signed char cProtocol_1_12::GetProtocolEntityStatus(EntityAnimation a_Animation) const
+signed char cProtocol_1_12_2::GetProtocolEntityStatus(EntityAnimation a_Animation) const
 {
 	switch (a_Animation)
 	{
@@ -1114,10 +1225,7 @@ signed char cProtocol_1_12::GetProtocolEntityStatus(EntityAnimation a_Animation)
 }
 
 
-
-
-
-UInt32 cProtocol_1_12::GetProtocolMobType(const eMonsterType a_MobType) const
+UInt32 cProtocol_1_12_2::GetProtocolMobType(const eMonsterType a_MobType) const
 {
 	switch (a_MobType)
 	{
@@ -1127,20 +1235,7 @@ UInt32 cProtocol_1_12::GetProtocolMobType(const eMonsterType a_MobType) const
 	}
 }
 
-
-
-
-
-cProtocol::Version cProtocol_1_12::GetProtocolVersion() const
-{
-	return Version::v1_12;
-}
-
-
-
-
-
-bool cProtocol_1_12::HandlePacket(cByteBuffer & a_ByteBuffer, UInt32 a_PacketType)
+bool cProtocol_1_12_2::HandlePacket(cByteBuffer & a_ByteBuffer, UInt32 a_PacketType)
 {
 	switch (m_State)
 	{
@@ -1212,150 +1307,6 @@ bool cProtocol_1_12::HandlePacket(cByteBuffer & a_ByteBuffer, UInt32 a_PacketTyp
 }
 
 
-
-
-
-////////////////////////////////////////////////////////////////////////////////
-// cProtocol_1_12_1:
-
-UInt32 cProtocol_1_12_1::GetPacketID(ePacketType a_Packet) const
-{
-	switch (a_Packet)
-	{
-		case pktAttachEntity:           return 0x43;
-		case pktCameraSetTo:            return 0x39;
-		case pktCollectEntity:          return 0x4b;
-		case pktDestroyEntity:          return 0x32;
-		case pktDisplayObjective:       return 0x3b;
-		case pktEntityEffect:           return 0x4f;
-		case pktEntityEquipment:        return 0x3f;
-		case pktEntityHeadLook:         return 0x36;
-		case pktEntityMeta:             return 0x3c;
-		case pktEntityProperties:       return 0x4e;
-		case pktEntityVelocity:         return 0x3e;
-		case pktExperience:             return 0x40;
-		case pktHeldItemChange:         return 0x3a;
-		case pktLeashEntity:            return 0x3d;
-		case pktPlayerList:             return 0x2e;
-		case pktPlayerListHeaderFooter: return 0x4a;
-		case pktPlayerAbilities:        return 0x2c;
-		case pktPlayerMoveLook:         return 0x2f;
-		case pktRemoveEntityEffect:     return 0x33;
-		case pktResourcePack:           return 0x34;
-		case pktRespawn:                return 0x35;
-		case pktScoreboardObjective:    return 0x42;
-		case pktSpawnPosition:          return 0x46;
-		case pktUnlockRecipe:           return 0x31;
-		case pktUpdateHealth:           return 0x41;
-		case pktUpdateScore:            return 0x45;
-		case pktUseBed:                 return 0x30;
-		case pktTeleportEntity:         return 0x4c;
-		case pktTimeUpdate:             return 0x47;
-		case pktTitle:                  return 0x48;
-
-		default: return Super::GetPacketID(a_Packet);
-	}
-}
-
-
-
-
-
-cProtocol::Version cProtocol_1_12_1::GetProtocolVersion() const
-{
-	return Version::v1_12_1;
-}
-
-
-
-
-
-bool cProtocol_1_12_1::HandlePacket(cByteBuffer & a_ByteBuffer, UInt32 a_PacketType)
-{
-	switch (m_State)
-	{
-		case State::Status:
-		{
-			switch (a_PacketType)
-			{
-				case 0x00: HandlePacketStatusRequest(a_ByteBuffer); return true;
-				case 0x01: HandlePacketStatusPing(a_ByteBuffer); return true;
-			}
-			break;
-		}
-
-		case State::Login:
-		{
-			switch (a_PacketType)
-			{
-				case 0x00: HandlePacketLoginStart(a_ByteBuffer); return true;
-				case 0x01: HandlePacketLoginEncryptionResponse(a_ByteBuffer); return true;
-			}
-			break;
-		}
-
-		case State::Game:
-		{
-			switch (a_PacketType)
-			{
-				case 0x00: HandleConfirmTeleport(a_ByteBuffer); return true;
-				case 0x01: HandlePacketTabComplete(a_ByteBuffer); return true;
-				case 0x02: HandlePacketChatMessage(a_ByteBuffer); return true;
-				case 0x03: HandlePacketClientStatus(a_ByteBuffer); return true;
-				case 0x04: HandlePacketClientSettings(a_ByteBuffer); return true;
-				case 0x05: break;  // Confirm transaction - not used in Cuberite
-				case 0x06: HandlePacketEnchantItem(a_ByteBuffer); return true;
-				case 0x07: HandlePacketWindowClick(a_ByteBuffer); return true;
-				case 0x08: HandlePacketWindowClose(a_ByteBuffer); return true;
-				case 0x09: HandlePacketPluginMessage(a_ByteBuffer); return true;
-				case 0x0a: HandlePacketUseEntity(a_ByteBuffer); return true;
-				case 0x0b: HandlePacketKeepAlive(a_ByteBuffer); return true;
-				case 0x0c: HandlePacketPlayer(a_ByteBuffer); return true;
-				case 0x0d: HandlePacketPlayerPos(a_ByteBuffer); return true;
-				case 0x0e: HandlePacketPlayerPosLook(a_ByteBuffer); return true;
-				case 0x0f: HandlePacketPlayerLook(a_ByteBuffer); return true;
-				case 0x10: HandlePacketVehicleMove(a_ByteBuffer); return true;
-				case 0x11: HandlePacketBoatSteer(a_ByteBuffer); return true;
-				case 0x12: HandleCraftRecipe(a_ByteBuffer); return true;
-				case 0x13: HandlePacketPlayerAbilities(a_ByteBuffer); return true;
-				case 0x14: HandlePacketBlockDig(a_ByteBuffer); return true;
-				case 0x15: HandlePacketEntityAction(a_ByteBuffer); return true;
-				case 0x16: HandlePacketSteerVehicle(a_ByteBuffer); return true;
-				case 0x17: HandlePacketCraftingBookData(a_ByteBuffer); return true;
-				case 0x18: HandlePacketResourcePackStatus(a_ByteBuffer); return true;
-				case 0x19: HandlePacketAdvancementTab(a_ByteBuffer); return true;
-				case 0x1a: HandlePacketSlotSelect(a_ByteBuffer); return true;
-				case 0x1b: HandlePacketCreativeInventoryAction(a_ByteBuffer); return true;
-				case 0x1c: HandlePacketUpdateSign(a_ByteBuffer); return true;
-				case 0x1d: HandlePacketAnimation(a_ByteBuffer); return true;
-				case 0x1e: HandlePacketSpectate(a_ByteBuffer); return true;
-				case 0x1f: HandlePacketBlockPlace(a_ByteBuffer); return true;
-				case 0x20: HandlePacketUseItem(a_ByteBuffer); return true;
-			}
-			break;
-		}
-	}  // switch (m_State)
-
-	// Unknown packet type, report to the ClientHandle:
-	m_Client->PacketUnknown(a_PacketType);
-	return false;
-}
-
-
-
-
-////////////////////////////////////////////////////////////////////////////////
-// cProtocol_1_12_2::
-
-cProtocol::Version cProtocol_1_12_2::GetProtocolVersion() const
-{
-	return Version::v1_12_2;
-}
-
-
-
-
-
 void cProtocol_1_12_2::HandlePacketKeepAlive(cByteBuffer & a_ByteBuffer)
 {
 	HANDLE_READ(a_ByteBuffer, ReadBEInt64, Int64, KeepAliveID);
@@ -1368,9 +1319,6 @@ void cProtocol_1_12_2::HandlePacketKeepAlive(cByteBuffer & a_ByteBuffer)
 		m_Client->HandleKeepAlive(static_cast<UInt32>(KeepAliveID));
 	}
 }
-
-
-
 
 
 void cProtocol_1_12_2::SendKeepAlive(UInt32 a_PingID)
@@ -1387,14 +1335,11 @@ void cProtocol_1_12_2::SendKeepAlive(UInt32 a_PingID)
 }
 
 
-
-
-
 void cProtocol_1_12_2::SendUnlockRecipe(UInt32 a_RecipeID)
 {
 	ASSERT(m_State == 3);  // In game mode?
 
-	auto ProtocolRecipeId = cRoot::Get()->GetRecipeMapper()->GetProtocolRecipeId(a_RecipeID, m_Client->GetProtocolVersion());
+	auto ProtocolRecipeId = cRoot::Get()->GetRecipeMapper()->GetProtocolRecipeId(a_RecipeID);
 	if (ProtocolRecipeId.has_value())
 	{
 		cPacketizer Pkt(*this, pktUnlockRecipe);
@@ -1407,14 +1352,11 @@ void cProtocol_1_12_2::SendUnlockRecipe(UInt32 a_RecipeID)
 }
 
 
-
-
-
 void cProtocol_1_12_2::SendInitRecipes(UInt32 a_RecipeID)
 {
 	ASSERT(m_State == 3);  // In game mode?
 
-	auto ProtocolRecipeId = cRoot::Get()->GetRecipeMapper()->GetProtocolRecipeId(a_RecipeID, m_Client->GetProtocolVersion());
+	auto ProtocolRecipeId = cRoot::Get()->GetRecipeMapper()->GetProtocolRecipeId(a_RecipeID);
 	if (!ProtocolRecipeId.has_value())
 	{
 		return;

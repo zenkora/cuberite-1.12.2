@@ -64,7 +64,7 @@ endif()
 
 # Extra files for BlockTypePalette test:
 file (COPY
-	../../Server/Protocol/1.13/base.btp.txt
+	../../Server/Protocol/1.12.2/base.btp.txt
 	../../Server/Protocol/UpgradeBlockTypePalette.txt
 	DESTINATION ./
 )

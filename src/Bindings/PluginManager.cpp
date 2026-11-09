@@ -671,11 +671,11 @@ bool cPluginManager::CallHookKilling(cEntity & a_Victim, cEntity * a_Killer, Tak
 
 
 
-bool cPluginManager::CallHookLogin(cClientHandle & a_Client, UInt32 a_ProtocolVersion, const AString & a_Username)
+bool cPluginManager::CallHookLogin(cClientHandle & a_Client, const AString & a_Username)
 {
 	return GenericCallHook(HOOK_LOGIN, [&](cPlugin * a_Plugin)
 		{
-			return a_Plugin->OnLogin(a_Client, a_ProtocolVersion, a_Username);
+			return a_Plugin->OnLogin(a_Client, a_Username);
 		}
 	);
 }

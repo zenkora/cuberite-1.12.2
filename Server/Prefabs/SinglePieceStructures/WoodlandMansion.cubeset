@@ -69,39 +69,39 @@ Cubeset =
 				["VerticalStrategy"] = "Fixed|64",
 			},
 			BlockDefinitions =
-			{
-				".:  0: 0",  -- air
-				"a:  5: 0",  -- planks (oak)
-				"b:  4: 0",  -- cobblestone
-				"c:  5: 4",  -- planks (acacia)
-				"d:  5: 5",  -- planks (dark oak)
-				"e: 98: 0",  -- stone bricks
-				"f: 98: 1",  -- mossy stone bricks
-				"g: 98: 2",  -- cracked stone bricks
-				"h: 98: 3",  -- chiseled stone bricks
-				"i: 67: 0",  -- stone stairs
-				"j: 67: 1",  -- stone stairs
-				"k: 67: 2",  -- stone stairs
-				"l: 67: 3",  -- stone stairs
-				"m:125: 0",  -- stone brick stairs
-				"n:125: 1",  -- stone brick stairs
-				"o:125: 2",  -- stone brick stairs
-				"p:125: 3",  -- stone brick stairs
-				"q: 24: 0",  -- sandstone
-				"r: 24: 1",  -- sandstone
-				"s: 24: 2",  -- sandstone
-				"t:101: 0",  -- iron bars
-				"u: 54: 0",  -- chest
-				"v: 50: 0",  -- torch
-				"w: 98: 4",  -- smooth stone bricks (1.14+)
-				"x: 17: 0",  -- log (oak)
-				"y: 17: 1",  -- log (spruce)
-				"z: 17: 2",  -- log (birch)
-				"A: 17: 3",  -- log (jungle)
-				"B: 98: 5",  -- stone brick (1.14+)
-				"C: 162: 0", -- dark oak log
-				"D: 162: 1", -- dark oak log
-			},
+					{
+						".:  0: 0",  -- air
+						"a:  5: 0",  -- planks (oak)
+						"b:  4: 0",  -- cobblestone
+						"c:  5: 4",  -- planks (acacia)
+						"d:  5: 5",  -- planks (dark oak)
+						"e: 98: 0",  -- stone bricks
+						"f: 98: 1",  -- mossy stone bricks
+						"g: 98: 2",  -- cracked stone bricks
+						"h: 98: 3",  -- chiseled stone bricks
+						"i: 67: 0",  -- stone stairs
+						"j: 67: 1",  -- stone stairs
+						"k: 67: 2",  -- stone stairs
+						"l: 67: 3",  -- stone stairs
+						"m:125: 0",  -- stone brick stairs
+						"n:125: 1",  -- stone brick stairs
+						"o:125: 2",  -- stone brick stairs
+						"p:125: 3",  -- stone brick stairs
+						"q: 24: 0",  -- sandstone
+						"r: 24: 1",  -- sandstone
+						"s: 24: 2",  -- sandstone
+						"t:101: 0",  -- iron bars
+						"u: 54: 0",  -- chest
+						"v: 50: 0",  -- torch
+						"w: 98: 4",  -- smooth stone bricks
+						"x: 17: 0",  -- log (oak)
+						"y: 17: 1",  -- log (spruce)
+						"z: 17: 2",  -- log (birch)
+						"A: 17: 3",  -- log (jungle)
+						"B: 98: 5",  -- stone brick
+						"C: 162: 0", -- dark oak log
+						"D: 162: 1", -- dark oak log
+					},
 			BlockData =
 			{
 				-- Foundation level (y=0-2)

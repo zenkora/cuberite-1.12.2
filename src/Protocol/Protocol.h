@@ -333,16 +333,6 @@ public:
 	/** The protocol version number, received from the client in the Handshake packet. */
 	enum class Version
 	{
-		v1_8_0  = 47,
-		v1_9_0  = 107,
-		v1_9_1  = 108,
-		v1_9_2  = 109,
-		v1_9_4  = 110,
-		v1_10_0 = 210,
-		v1_11_0 = 315,
-		v1_11_1 = 316,
-		v1_12   = 335,
-		v1_12_1 = 338,
 		v1_12_2 = 340
 	};
 
@@ -477,8 +467,8 @@ protected:
 	/** Returns the protocol-specific packet ID given the protocol-agnostic packet enum. */
 	virtual UInt32 GetPacketID(ePacketType a_Packet) const = 0;
 
-	/** Returns the current protocol's version, for handling status requests. */
-	virtual Version GetProtocolVersion() const = 0;
+	/** Returns the current protocol's version (always 1.12.2). */
+	virtual Version GetProtocolVersion() const { return Version::v1_12_2; }
 
 	/** Sends a single packet contained within the cPacketizer class.
 	The cPacketizer's destructor calls this to send the contained packet; protocol may transform the data (compression in 1.8 etc). */

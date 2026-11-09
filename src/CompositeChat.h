@@ -28,7 +28,7 @@ each character / character combination in the string specifies the style to use:
 	- n = underlined
 	- o = italic
 	- r = reset
-If the protocol version doesn't support all the features, it degrades gracefully.
+If the protocol doesn't support all the features, it degrades gracefully.
 */
 class cCompositeChat
 {

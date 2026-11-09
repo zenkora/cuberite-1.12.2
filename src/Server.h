@@ -74,12 +74,12 @@ public:
 	// tolua_end
 
 	/** Add a Forge mod to the server ping list. */
-	bool RegisterForgeMod(const AString & a_ModName, const AString & a_ModVersion, UInt32 a_ProtocolVersionNumber);
+	bool RegisterForgeMod(const AString & a_ModName, const AString & a_ModVersion);
 
 	// tolua_begin
 
 	/** Remove a Forge mod to the server ping list. */
-	void UnregisterForgeMod(const AString & a_ModName, UInt32 a_ProtocolVersionNumber);
+	void UnregisterForgeMod(const AString & a_ModName);
 
 	/** Check if the player is queued to be transferred to a World.
 	Returns true is Player is found in queue. */
@@ -162,8 +162,8 @@ public:
 	from the settings. */
 	bool ShouldAllowMultiWorldTabCompletion(void) const { return m_ShouldAllowMultiWorldTabCompletion; }
 
-	/** Get the Forge mods (map of ModName -> ModVersionString) registered for a given protocol. */
-	const AStringMap & GetRegisteredForgeMods(const UInt32 a_Protocol);
+	/** Get the Forge mods (map of ModName -> ModVersionString) registered for the server. */
+	const AStringMap & GetRegisteredForgeMods();
 
 private:
 
@@ -230,8 +230,8 @@ private:
 	AString m_ResourcePackUrl;
 	AString m_CustomRedirectUrl;
 
-	/** Map of protocol version to Forge mods (map of ModName -> ModVersionString) */
-	std::map<UInt32, AStringMap> m_ForgeModsByVersion;
+	/** Map of Forge mods (map of ModName -> ModVersionString) */
+	std::map<AString, AString> m_ForgeMods;
 
 	/** True - allow same username to login more than once False - only once */
 	bool m_bAllowMultiLogin;
@@ -281,9 +281,6 @@ private:
 
 	/** Executes the console command, sends output through the specified callback. */
 	void ExecuteConsoleCommand(const AString & a_Cmd, cCommandOutputCallback & a_Output);
-
-	/** Get the Forge mods registered for a given protocol, for modification */
-	AStringMap & RegisteredForgeMods(const UInt32 a_Protocol);
 
 	/** Loads, or generates, if missing, RSA keys for protocol encryption */
 	void PrepareKeys(void);

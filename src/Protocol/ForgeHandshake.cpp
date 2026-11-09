@@ -66,15 +66,13 @@ void cForgeHandshake::SetError(const AString & message)
 
 void cForgeHandshake::AugmentServerListPing(cClientHandle & a_Client, Json::Value & a_ResponseValue)
 {
-	auto ProtocolVersion = a_Client.GetProtocolVersion();
-	auto & Mods = cRoot::Get()->GetServer()->GetRegisteredForgeMods(ProtocolVersion);
+	UNUSED(a_Client);
+	auto & Mods = cRoot::Get()->GetServer()->GetRegisteredForgeMods();
 
 	if (Mods.empty())
 	{
 		return;
 	}
-
-	LOGD("Received server ping from version: %d", ProtocolVersion);
 
 	Json::Value Modinfo;
 	Modinfo["type"] = "FML";

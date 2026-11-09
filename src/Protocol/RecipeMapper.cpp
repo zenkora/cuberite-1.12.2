@@ -4,41 +4,28 @@
 
 cRecipeMapper::cRecipeMapper(void)
 {
-	AString path = "Protocol";
-	auto contents = cFile::GetFolderContents(path);
-	for (const auto & content: contents)
-	{
-		auto fullName = path + cFile::PathSeparator() + content;
-		if (cFile::IsFolder(fullName))
-		{
-			loadRecipes(content);
-		}
-	}
+	loadRecipes();
 }
 
 
-
-
-
-void cRecipeMapper::loadRecipes(const AString & a_ProtocolVersion)
+void cRecipeMapper::loadRecipes()
 {
 	cFile f;
-	if (!f.Open("Protocol/" + a_ProtocolVersion + "/base.recipes.txt", cFile::fmRead))
+	if (!f.Open("Protocol/1.12.2/base.recipes.txt", cFile::fmRead))
 	{
-		LOGWARNING("Cannot open file \"Protocol/%s/base.recipes.txt\", no recipe book recipes will be available!", a_ProtocolVersion);
+		LOGWARNING("Cannot open file \"Protocol/1.12.2/base.recipes.txt\", no recipe book recipes will be available!");
 		return;
 	}
 	AString Everything;
 	if (!f.ReadRestOfFile(Everything))
 	{
-		LOGWARNING("Cannot read file \"Protocol/%s/base.recipes.txt\", no recipe book recipes will be available!", a_ProtocolVersion);
+		LOGWARNING("Cannot read file \"Protocol/1.12.2/base.recipes.txt\", no recipe book recipes will be available!");
 		return;
 	}
 	f.Close();
 
 	// Split it into lines, then process each line as a single recipe:
 	AStringVector Split = StringSplit(Everything, "\n");
-	m_ProtocolVersionMap[a_ProtocolVersion] = {};
 	const auto & RecipeNameMap = cRoot::Get()->GetCraftingRecipes()->GetRecipeNameMap();
 
 	int LineNum = 1;
@@ -51,24 +38,13 @@ void cRecipeMapper::loadRecipes(const AString & a_ProtocolVersion)
 			// Empty recipe
 			continue;
 		}
-		AddRecipeLine(a_ProtocolVersion, LineNum, Recipe, RecipeNameMap);
+		AddRecipeLine(LineNum, Recipe, RecipeNameMap);
 	}
-	LOG("Loaded %s %zu recipe book", a_ProtocolVersion, m_ProtocolVersionMap[a_ProtocolVersion].size());
+	LOG("Loaded %zu recipe book entries", m_RecipeMap.size());
 }
 
 
-
-
-
-cRecipeMapper::~cRecipeMapper()
-{
-}
-
-
-
-
-
-void cRecipeMapper::AddRecipeLine(const AString & a_ProtocolVersion, int a_LineNum, const AString & a_RecipeLine, const std::map<AString, UInt32> & a_RecipeNameMap)
+void cRecipeMapper::AddRecipeLine(int a_LineNum, const AString & a_RecipeLine, const std::map<AString, UInt32> & a_RecipeNameMap)
 {
 	AStringVector Sides = StringSplit(a_RecipeLine, " ");
 	UInt32 Id;
@@ -84,21 +60,18 @@ void cRecipeMapper::AddRecipeLine(const AString & a_ProtocolVersion, int a_LineN
 	{
 		return;
 	}
-	m_ProtocolVersionMap[a_ProtocolVersion].emplace(Id, RecipeIndex->second);
+	m_RecipeMap.emplace(Id, RecipeIndex->second);
 }
 
 
-
-
-
-std::optional<UInt32> cRecipeMapper::GetProtocolRecipeId(UInt32 a_RecipeId, UInt32 a_ProtocolVersion)
+cRecipeMapper::~cRecipeMapper()
 {
-	auto ProtocolMap = m_ProtocolVersionMap.find(cRoot::Get()->GetProtocolVersionTextFromInt(static_cast<int>(a_ProtocolVersion)));
-	if (ProtocolMap == m_ProtocolVersionMap.end())
-	{
-		return {};
-	}
-	for (const auto & item: ProtocolMap->second)
+}
+
+
+std::optional<UInt32> cRecipeMapper::GetProtocolRecipeId(UInt32 a_RecipeId)
+{
+	for (const auto & item: m_RecipeMap)
 	{
 		if (item.second == a_RecipeId)
 		{
@@ -109,18 +82,10 @@ std::optional<UInt32> cRecipeMapper::GetProtocolRecipeId(UInt32 a_RecipeId, UInt
 }
 
 
-
-
-
-std::optional<UInt32> cRecipeMapper::GetCuberiteRecipeId(UInt32 a_ProtocolRecipeId, UInt32 a_ProtocolVersion)
+std::optional<UInt32> cRecipeMapper::GetCuberiteRecipeId(UInt32 a_ProtocolRecipeId)
 {
-	auto ProtocolMap = m_ProtocolVersionMap.find(cRoot::Get()->GetProtocolVersionTextFromInt(static_cast<int>(a_ProtocolVersion)));
-	if (ProtocolMap == m_ProtocolVersionMap.end())
-	{
-		return {};
-	}
-	auto Element = ProtocolMap->second.find(a_ProtocolRecipeId);
-	if (Element != ProtocolMap->second.end())
+	auto Element = m_RecipeMap.find(a_ProtocolRecipeId);
+	if (Element != m_RecipeMap.end())
 	{
 		return Element->second;
 	}

@@ -763,7 +763,7 @@ bool cClientHandle::HandleLogin()
 		// LOGD("Handling login for client %s @ %s (%p), state = %d", a_Username.c_str(), m_IPString.c_str(), static_cast<void *>(this), m_State.load());
 
 		// Let the plugins know about this event, they may refuse the player:
-		if (cRoot::Get()->GetPluginManager()->CallHookLogin(*this, m_ProtocolVersion, GetUsername()))
+		if (cRoot::Get()->GetPluginManager()->CallHookLogin(*this, GetUsername()))
 		{
 			SendDisconnect("Login Rejected!");
 			return false;

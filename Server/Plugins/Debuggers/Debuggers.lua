@@ -1608,7 +1608,7 @@ end
 
 
 function HandleClientVersionCmd(a_Split, a_Player)
-	a_Player:SendMessage("Your client version number is " .. a_Player:GetClientHandle():GetProtocolVersion() ..".")
+	a_Player:SendMessage("Your client version number is " .. a_Player:GetClientHandle():GetProtocolVersion() .. " (1.12.2).")
 	return true
 end
 

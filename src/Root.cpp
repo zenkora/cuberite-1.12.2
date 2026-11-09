@@ -779,7 +779,8 @@ bool cRoot::DoWithPlayer(const AString & a_PlayerName, cPlayerListCallback a_Cal
 
 AString cRoot::GetProtocolVersionTextFromInt(int a_ProtocolVersion)
 {
-	return cMultiVersionProtocol::GetVersionTextFromInt(static_cast<cProtocol::Version>(a_ProtocolVersion));
+	UNUSED(a_ProtocolVersion);
+	return "1.12.2";
 }
 
 

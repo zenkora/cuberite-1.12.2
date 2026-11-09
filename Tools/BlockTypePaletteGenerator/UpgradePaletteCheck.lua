@@ -1,12 +1,12 @@
 -- UpgradePaletteCheck.lua
 
 --[[ Implements a check that lists all entries in the UpgradeBlockTypePalette
-that are not present in the 1.13 protocol palette.
+that are not present in the 1.12.2 protocol palette.
 
 The palette files are expected to be in folders relative to this script like
 they are in the git repo:
 ../../Server/Protocol/UpgradeBlockTypePalette.txt
-../../Server/Protocol/1.13/base.btp.txt
+../../Server/Protocol/1.12.2/base.btp.txt
 --]]
 
 
@@ -75,7 +75,7 @@ end
 
 
 
---- Loads the 1.13 palette
+--- Loads the 1.12.2 palette
 --[[
 Returns the palette loaded as a table:
 {
@@ -84,7 +84,7 @@ Returns the palette loaded as a table:
 }
 --]]
 local function loadPalette()
-	local pal = loadPalSplitHeader("../../Server/Protocol/1.13/base.btp.txt")
+	local pal = loadPalSplitHeader("../../Server/Protocol/1.12.2/base.btp.txt")
 	local numberToDesc = {}
 	local descToNumber = {}
 	local prefix = pal.headers["CommonPrefix"] or ""
@@ -108,7 +108,7 @@ local function runCheck()
 	local pal = loadPalette()
 	local upg = loadPalSplitHeader("../../Server/Protocol/UpgradeBlockTypePalette.txt")
 
-	-- Check the UpgradePalette's BlockDescs against the 1.13 palette:
+	-- Check the UpgradePalette's BlockDescs against the 1.12.2 palette:
 	local prefix = upg.headers["CommonPrefix"] or ""
 	local notFound = {}
 	local idx = 1

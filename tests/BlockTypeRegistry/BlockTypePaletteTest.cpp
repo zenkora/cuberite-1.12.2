@@ -279,10 +279,10 @@ CommonPrefix\tminecraft:\r\n\
 
 
 
-/** Tests loading a palette from a real-life protocol base file (1.13). */
+/** Tests loading a palette from a real-life protocol base file (1.12.2). */
 static void testLoadFromBaseFile(void)
 {
-	LOG("Testing loading a palette from file \"base.btp.txt\" (1.13)");
+	LOG("Testing loading a palette from file \"base.btp.txt\" (1.12.2)");
 	BlockTypePalette palette;
 	{
 		auto fileContents = cFile::ReadWholeFile("base.btp.txt");

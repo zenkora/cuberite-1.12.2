@@ -3,19 +3,7 @@
 #include "Protocol.h"
 
 
-
-
-
-// Adjust these if a new protocol is added or an old one is removed:
-#define MCS_CLIENT_VERSIONS "1.12.2"
-#define MCS_PROTOCOL_VERSIONS "340"
-#define MCS_LATEST_PROTOCOL_VERSION 340
-
-
-
-
-
-/** Meta-protocol that recognizes multiple protocol versions, creates the specific
+/** Meta-protocol that recognizes the 1.12.2 protocol version, creates the specific
 protocol version instance and redirects everything to it. */
 class cMultiVersionProtocol
 {
@@ -23,7 +11,7 @@ public:
 
 	cMultiVersionProtocol();
 
-	/** Translates protocol version number into protocol version text: 49 -> "1.4.4" */
+	/** Translates protocol version number into protocol version text: 340 -> "1.12.2" */
 	static AString GetVersionTextFromInt(cProtocol::Version a_ProtocolVersion);
 
 	/** Returns if we contain a concrete protocol corresponding to the client's protocol version. */
@@ -42,7 +30,7 @@ public:
 	The protocol modifies the provided buffer in-place. */
 	void HandleIncomingData(cClientHandle & a_Client, ContiguousByteBuffer & a_Data);
 
-	/** Allows the protocol (if any) to do a final pass on outgiong data, possibly modifying the provided buffer in-place. */
+	/** Allows the protocol (if any) to do a final pass on outgoing data, possibly modifying the provided buffer in-place. */
 	void HandleOutgoingData(ContiguousByteBuffer & a_Data);
 
 	/** Sends a disconnect to the client as a result of a recognition error.
@@ -63,7 +51,7 @@ private:
 	bool TryHandleHTTPRequest(cClientHandle & a_Client, ContiguousByteBuffer & a_Data);
 
 	/** Tries to recognize a protocol in the lengthed family (1.7+), based on m_Buffer.
-	Returns a cProtocol_XXX instance if recognized. */
+	Returns a cProtocol_1_12_2 instance if recognized. */
 	std::unique_ptr<cProtocol> TryRecognizeLengthedProtocol(cClientHandle & a_Client);
 
 	/** Sends one packet inside a cByteBuffer.
