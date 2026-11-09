@@ -2686,6 +2686,12 @@ void cWSSAnvil::LoadIllusionerFromNBT(cEntityList &a_Entities, const cParsedNBT 
 		Monster->SetNextSpellType(a_NBT.GetInt(NextSpellTypeIdx));
 	}
 
+	int IsMirrorImageIdx = a_NBT.FindChildByName(a_TagIdx, "IsMirrorImage");
+	if (IsMirrorImageIdx > 0)
+	{
+		Monster->SetIsMirrorImage(a_NBT.GetByte(IsMirrorImageIdx) == 1);
+	}
+
 	a_Entities.emplace_back(std::move(Monster));
 }
 

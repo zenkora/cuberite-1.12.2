@@ -1043,7 +1043,275 @@ void cBioGenVanilla::GenLayerRiverMix::GetInts(int a_X, int a_Z, int a_SizeX, in
     }
 }
 
-////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////
+// GenLayerHills - Add hill variants to biomes
+
+cBioGenVanilla::GenLayerHills::GenLayerHills(int a_Seed, GenLayer * a_Parent) : GenLayer(a_Seed, a_Parent) {}
+
+int cBioGenVanilla::GenLayerHills::GetInt(int a_X, int a_Z)
+{
+    m_ChunkX = a_X;
+    m_ChunkZ = a_Z;
+    int val = GetParentInt(a_X, a_Z);
+
+    // Special biomes that don't get hills
+    if (val == 0 || val == 7 || val == 10 || val == 11 || val == 14 || val == 15 ||
+        val == 16 || val == 24 || val == 25 || val == 26)
+    {
+        return val;
+    }
+
+    // Check 3x3 neighborhood for same biome
+    bool hasDifferentNeighbor = false;
+    for (int dz = -1; dz <= 1; dz++)
+    {
+        for (int dx = -1; dx <= 1; dx++)
+        {
+            if (dx == 0 && dz == 0) continue;
+            int neighbor = GetParentInt(a_X + dx, a_Z + dz);
+            if (neighbor != val)
+            {
+                hasDifferentNeighbor = true;
+                break;
+            }
+        }
+        if (hasDifferentNeighbor) break;
+    }
+
+    // If all neighbors are same biome, no hills
+    if (!hasDifferentNeighbor)
+    {
+        return val;
+    }
+
+    // 1/4 chance to convert to hill variant
+    int64_t i = static_cast<int64_t>(a_X) * 341873128712LL + static_cast<int64_t>(a_Z) * 132897987541LL + m_Seed;
+    i = i * i * 42317861 + i * 11;
+    i = (i >> 16) & 3;
+
+    if (i == 0)
+    {
+        // Map base biome to hill variant
+        switch (val)
+        {
+            case 1:  return 18;  // Plains -> ForestHills (vanilla uses this for Plains hills too)
+            case 2:  return 17;  // Desert -> DesertHills
+            case 3:  return 20;  // ExtremeHills -> ExtremeHillsEdge
+            case 4:  return 18;  // Forest -> ForestHills
+            case 5:  return 19;  // Taiga -> TaigaHills
+            case 6:  return 6;   // Swampland stays (no hills)
+            case 12: return 13;  // IcePlains -> IceMountains
+            case 14: return 14;  // MushroomIsland stays
+            case 21: return 22;  // Jungle -> JungleHills
+            case 23: return 23;  // JungleEdge stays
+            case 27: return 28;  // BirchForest -> BirchForestHills
+            case 29: return 29;  // RoofedForest stays
+            case 30: return 31;  // ColdTaiga -> ColdTaigaHills
+            case 32: return 33;  // MegaTaiga -> MegaTaigaHills
+            case 34: return 20;  // ExtremeHillsPlus -> ExtremeHillsEdge
+            case 35: return 36;  // Savanna -> SavannaPlateau
+            case 37: return 39;  // Mesa -> MesaPlateau
+            case 38: return 38;  // MesaPlateauF stays
+            default: return val;
+        }
+    }
+
+    return val;
+}
+
+void cBioGenVanilla::GenLayerHills::GetInts(int a_X, int a_Z, int a_SizeX, int a_SizeZ, int * a_Out)
+{
+    for (int z = 0; z < a_SizeZ; z++)
+    {
+        for (int x = 0; x < a_SizeX; x++)
+        {
+            m_ChunkX = a_X + x;
+            m_ChunkZ = a_Z + z;
+            int val = GetParentInt(m_ChunkX, m_ChunkZ);
+
+            if (val == 0 || val == 7 || val == 10 || val == 11 || val == 14 || val == 15 ||
+                val == 16 || val == 24 || val == 25 || val == 26)
+            {
+                a_Out[x + a_SizeX * z] = val;
+                continue;
+            }
+
+            bool hasDifferentNeighbor = false;
+            for (int dz = -1; dz <= 1; dz++)
+            {
+                for (int dx = -1; dx <= 1; dx++)
+                {
+                    if (dx == 0 && dz == 0) continue;
+                    int neighbor = GetParentInt(m_ChunkX + dx, m_ChunkZ + dz);
+                    if (neighbor != val)
+                    {
+                        hasDifferentNeighbor = true;
+                        break;
+                    }
+                }
+                if (hasDifferentNeighbor) break;
+            }
+
+            if (!hasDifferentNeighbor)
+            {
+                a_Out[x + a_SizeX * z] = val;
+                continue;
+            }
+
+            int64_t i = static_cast<int64_t>(m_ChunkX) * 341873128712LL + static_cast<int64_t>(m_ChunkZ) * 132897987541LL + m_Seed;
+            i = i * i * 42317861 + i * 11;
+            i = (i >> 16) & 3;
+
+            if (i == 0)
+            {
+                switch (val)
+                {
+                    case 1:  a_Out[x + a_SizeX * z] = 18; break;
+                    case 2:  a_Out[x + a_SizeX * z] = 17; break;
+                    case 3:  a_Out[x + a_SizeX * z] = 20; break;
+                    case 4:  a_Out[x + a_SizeX * z] = 18; break;
+                    case 5:  a_Out[x + a_SizeX * z] = 19; break;
+                    case 6:  a_Out[x + a_SizeX * z] = 6; break;
+                    case 12: a_Out[x + a_SizeX * z] = 13; break;
+                    case 14: a_Out[x + a_SizeX * z] = 14; break;
+                    case 21: a_Out[x + a_SizeX * z] = 22; break;
+                    case 23: a_Out[x + a_SizeX * z] = 23; break;
+                    case 27: a_Out[x + a_SizeX * z] = 28; break;
+                    case 29: a_Out[x + a_SizeX * z] = 29; break;
+                    case 30: a_Out[x + a_SizeX * z] = 31; break;
+                    case 32: a_Out[x + a_SizeX * z] = 33; break;
+                    case 34: a_Out[x + a_SizeX * z] = 20; break;
+                    case 35: a_Out[x + a_SizeX * z] = 36; break;
+                    case 37: a_Out[x + a_SizeX * z] = 39; break;
+                    case 38: a_Out[x + a_SizeX * z] = 38; break;
+                    default: a_Out[x + a_SizeX * z] = val; break;
+                }
+            }
+            else
+            {
+                a_Out[x + a_SizeX * z] = val;
+            }
+        }
+    }
+}
+
+
+//////////////////////////////////////////////////////////////////////////////////
+// GenLayerMutatedBiome - Add M (mutated) variants
+
+cBioGenVanilla::GenLayerMutatedBiome::GenLayerMutatedBiome(int a_Seed, GenLayer * a_Parent) : GenLayer(a_Seed, a_Parent) {}
+
+int cBioGenVanilla::GenLayerMutatedBiome::GetInt(int a_X, int a_Z)
+{
+    m_ChunkX = a_X;
+    m_ChunkZ = a_Z;
+    int val = GetParentInt(a_X, a_Z);
+
+    // Special biomes that don't get mutated variants
+    if (val == 0 || val == 7 || val == 10 || val == 11 || val == 14 || val == 15 ||
+        val == 16 || val == 24 || val == 25 || val == 26)
+    {
+        return val;
+    }
+
+    // 1/13 chance for mutated variant
+    int64_t i = static_cast<int64_t>(a_X) * 341873128712LL + static_cast<int64_t>(a_Z) * 132897987541LL + m_Seed;
+    i = i * i * 42317861 + i * 11;
+    i = (i >> 16) & 12;
+
+    if (i == 0)
+    {
+        // Map base biome to mutated variant (+128)
+        // Only certain biomes have M variants
+        switch (val)
+        {
+            case 1:  return 129; // Plains -> SunflowerPlains
+            case 2:  return 130; // Desert -> DesertM
+            case 3:  return 131; // ExtremeHills -> ExtremeHillsM
+            case 4:  return 132; // Forest -> FlowerForest
+            case 5:  return 133; // Taiga -> TaigaM
+            case 6:  return 134; // Swampland -> SwamplandM
+            case 12: return 140; // IcePlains -> IcePlainsSpikes
+            case 21: return 149; // Jungle -> JungleM
+            case 23: return 151; // JungleEdge -> JungleEdgeM
+            case 27: return 155; // BirchForest -> BirchForestM
+            case 28: return 156; // BirchForestHills -> BirchForestHillsM
+            case 29: return 157; // RoofedForest -> RoofedForestM
+            case 30: return 158; // ColdTaiga -> ColdTaigaM
+            case 32: return 160; // MegaTaiga -> MegaSpruceTaiga
+            case 33: return 161; // MegaTaigaHills -> MegaSpruceTaigaHills
+            case 34: return 162; // ExtremeHillsPlus -> ExtremeHillsPlusM
+            case 35: return 163; // Savanna -> SavannaM
+            case 36: return 164; // SavannaPlateau -> SavannaPlateauM
+            case 37: return 165; // Mesa -> MesaBryce
+            case 38: return 166; // MesaPlateauF -> MesaPlateauFM
+            case 39: return 167; // MesaPlateau -> MesaPlateauM
+            default: return val;
+        }
+    }
+
+    return val;
+}
+
+void cBioGenVanilla::GenLayerMutatedBiome::GetInts(int a_X, int a_Z, int a_SizeX, int a_SizeZ, int * a_Out)
+{
+    for (int z = 0; z < a_SizeZ; z++)
+    {
+        for (int x = 0; x < a_SizeX; x++)
+        {
+            m_ChunkX = a_X + x;
+            m_ChunkZ = a_Z + z;
+            int val = GetParentInt(m_ChunkX, m_ChunkZ);
+
+            if (val == 0 || val == 7 || val == 10 || val == 11 || val == 14 || val == 15 ||
+                val == 16 || val == 24 || val == 25 || val == 26)
+            {
+                a_Out[x + a_SizeX * z] = val;
+                continue;
+            }
+
+            int64_t i = static_cast<int64_t>(m_ChunkX) * 341873128712LL + static_cast<int64_t>(m_ChunkZ) * 132897987541LL + m_Seed;
+            i = i * i * 42317861 + i * 11;
+            i = (i >> 16) & 12;
+
+            if (i == 0)
+            {
+                switch (val)
+                {
+                    case 1:  a_Out[x + a_SizeX * z] = 129; break;
+                    case 2:  a_Out[x + a_SizeX * z] = 130; break;
+                    case 3:  a_Out[x + a_SizeX * z] = 131; break;
+                    case 4:  a_Out[x + a_SizeX * z] = 132; break;
+                    case 5:  a_Out[x + a_SizeX * z] = 133; break;
+                    case 6:  a_Out[x + a_SizeX * z] = 134; break;
+                    case 12: a_Out[x + a_SizeX * z] = 140; break;
+                    case 21: a_Out[x + a_SizeX * z] = 149; break;
+                    case 23: a_Out[x + a_SizeX * z] = 151; break;
+                    case 27: a_Out[x + a_SizeX * z] = 155; break;
+                    case 28: a_Out[x + a_SizeX * z] = 156; break;
+                    case 29: a_Out[x + a_SizeX * z] = 157; break;
+                    case 30: a_Out[x + a_SizeX * z] = 158; break;
+                    case 32: a_Out[x + a_SizeX * z] = 160; break;
+                    case 33: a_Out[x + a_SizeX * z] = 161; break;
+                    case 34: a_Out[x + a_SizeX * z] = 162; break;
+                    case 35: a_Out[x + a_SizeX * z] = 163; break;
+                    case 36: a_Out[x + a_SizeX * z] = 164; break;
+                    case 37: a_Out[x + a_SizeX * z] = 165; break;
+                    case 38: a_Out[x + a_SizeX * z] = 166; break;
+                    case 39: a_Out[x + a_SizeX * z] = 167; break;
+                    default: a_Out[x + a_SizeX * z] = val; break;
+                }
+            }
+            else
+            {
+                a_Out[x + a_SizeX * z] = val;
+            }
+        }
+    }
+}
+
+
+//////////////////////////////////////////////////////////////////////////////////
 // cBioGenVanilla main class
 
 cBioGenVanilla::cBioGenVanilla(int a_Seed) : m_Seed(a_Seed), m_Noise(a_Seed)
@@ -1054,7 +1322,7 @@ cBioGenVanilla::cBioGenVanilla(int a_Seed) : m_Seed(a_Seed), m_Noise(a_Seed)
 void cBioGenVanilla::InitializeLayers()
 {
     // Build the exact vanilla GenLayer chain:
-    // Island -> FuzzyZoom -> Zoom x3 -> AddIsland -> Zoom x2 -> RemoveTooMuchOcean -> AddSnow -> AddIsland3 -> Zoom x2 -> Edge -> Zoom x2 -> River -> Smooth -> RareBiome -> Biome -> Shore -> RiverMix
+    // Island -> FuzzyZoom -> Zoom x3 -> AddIsland -> Zoom x2 -> RemoveTooMuchOcean -> AddSnow -> AddIsland3 -> Zoom x2 -> Edge -> Zoom x2 -> River -> Smooth -> RareBiome -> Biome -> Hills -> MutatedBiome -> Shore -> RiverMix
 
     // Layer 1: Island (1x1)
     std::unique_ptr<GenLayer> layer = std::make_unique<GenLayerIsland>(m_Seed + 1);
@@ -1114,23 +1382,29 @@ void cBioGenVanilla::InitializeLayers()
     // Layer 19: Biome (1024x1024) - final biome assignment
     layer = std::make_unique<GenLayerBiome>(m_Seed + 19, layer.release());
 
-    // Layer 20: Shore (1024x1024)
-    layer = std::make_unique<GenLayerShore>(m_Seed + 20, layer.release());
+    // Layer 20: Hills (1024x1024) - add hill variants
+    layer = std::make_unique<GenLayerHills>(m_Seed + 20, layer.release());
 
-    // Layer 21: RiverMix (1024x1024) - combine rivers with biomes
+    // Layer 21: MutatedBiome (1024x1024) - add M variants
+    layer = std::make_unique<GenLayerMutatedBiome>(m_Seed + 21, layer.release());
+
+    // Layer 22: Shore (1024x1024)
+    layer = std::make_unique<GenLayerShore>(m_Seed + 22, layer.release());
+
+    // Layer 23: RiverMix (1024x1024) - combine rivers with biomes
     // Need to zoom river layer to match
     riverLayer = std::make_unique<GenLayerZoom>(m_Seed + 108, riverLayer.release());
     riverLayer = std::make_unique<GenLayerZoom>(m_Seed + 109, riverLayer.release());
     riverLayer = std::make_unique<GenLayerZoom>(m_Seed + 110, riverLayer.release());
     riverLayer = std::make_unique<GenLayerZoom>(m_Seed + 111, riverLayer.release());
-    layer = std::make_unique<GenLayerRiverMix>(m_Seed + 21, layer.release(), riverLayer.release());
+    layer = std::make_unique<GenLayerRiverMix>(m_Seed + 23, layer.release(), riverLayer.release());
 
     // Final zoom to chunk resolution (16x16 blocks per biome pixel)
     // Vanilla generates at 1024x1024 for 16x16 chunks, so we need to zoom 4 more times
-    layer = std::make_unique<GenLayerZoom>(m_Seed + 22, layer.release());  // 2048
-    layer = std::make_unique<GenLayerZoom>(m_Seed + 23, layer.release());  // 4096
-    layer = std::make_unique<GenLayerZoom>(m_Seed + 24, layer.release());  // 8192
-    layer = std::make_unique<GenLayerZoom>(m_Seed + 25, layer.release());  // 16384
+    layer = std::make_unique<GenLayerZoom>(m_Seed + 24, layer.release());  // 2048
+    layer = std::make_unique<GenLayerZoom>(m_Seed + 25, layer.release());  // 4096
+    layer = std::make_unique<GenLayerZoom>(m_Seed + 26, layer.release());  // 8192
+    layer = std::make_unique<GenLayerZoom>(m_Seed + 27, layer.release());  // 16384
 
     m_FinalLayer = std::move(layer);
 }

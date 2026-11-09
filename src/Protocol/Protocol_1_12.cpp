@@ -269,6 +269,9 @@ namespace Metadata_1_12
 		// Vindication illager
 		VINDICATOR_FLAGS = _MONSTER_NEXT,
 
+		// Illusioner
+		ILLUSIONER_FLAGS = _MONSTER_NEXT,
+
 		// EnderDragon
 		ENDER_DRAGON_DRAGON_PHASE = _INSENTIENT_NEXT,
 
@@ -992,8 +995,15 @@ void cProtocol_1_12::WriteMobMetadata(cPacketizer & a_Pkt, const cMonster & a_Mo
 
 		case mtIllusioner:
 		{
-			// Illagers (Vindicator, Evoker, Illusioner) share the same metadata: ILLAGER_FLAGS
-			// TODO: Implement proper Illager metadata when Illager classes are added
+			auto & Illusioner = static_cast<const cIllusioner &>(a_Mob);
+			a_Pkt.WriteBEUInt8(ILLUSIONER_FLAGS);
+			a_Pkt.WriteBEUInt8(METADATA_TYPE_BYTE);
+			UInt8 Flags = 0;
+			if (Illusioner.IsMirrorImage())
+			{
+				Flags |= 0x10;  // Mirror image flag
+			}
+			a_Pkt.WriteBEInt8(Flags);
 			break;
 		}
 

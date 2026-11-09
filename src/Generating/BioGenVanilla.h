@@ -172,6 +172,22 @@ protected:
         GenLayer * m_RiverParent;
     };
 
+    class GenLayerHills : public GenLayer
+    {
+    public:
+        GenLayerHills(int a_Seed, GenLayer * a_Parent);
+        virtual int GetInt(int a_X, int a_Z) override;
+        virtual void GetInts(int a_X, int a_Z, int a_SizeX, int a_SizeZ, int * a_Out) override;
+    };
+
+    class GenLayerMutatedBiome : public GenLayer
+    {
+    public:
+        GenLayerMutatedBiome(int a_Seed, GenLayer * a_Parent);
+        virtual int GetInt(int a_X, int a_Z) override;
+        virtual void GetInts(int a_X, int a_Z, int a_SizeX, int a_SizeZ, int * a_Out) override;
+    };
+
     // The final layer that produces the biome map
     std::unique_ptr<GenLayer> m_FinalLayer;
 

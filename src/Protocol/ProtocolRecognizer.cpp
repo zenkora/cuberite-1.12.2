@@ -6,10 +6,6 @@
 #include "Globals.h"
 
 #include "ProtocolRecognizer.h"
-#include "Protocol_1_8.h"
-#include "Protocol_1_9.h"
-#include "Protocol_1_10.h"
-#include "Protocol_1_11.h"
 #include "Protocol_1_12.h"
 #include "../ClientHandle.h"
 #include "../Root.h"

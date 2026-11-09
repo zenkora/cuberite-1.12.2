@@ -988,20 +988,21 @@ public:
 				case mtSkeletonHorse:
 				case mtStray:
 				case mtStrider:
-				case mtTraderLlama:
-				case mtTropicalFish:
-				case mtTurtle:
-				case mtVex:
-				case mtVindicator:
-				case mtWanderingTrader:
-				case mtIllusioner:
-				{
-					const cIllusioner * Illusioner = static_cast<const cIllusioner *>(a_Monster);
-					mWriter.AddInt("SpellCooldown", Illusioner->GetSpellCooldown());
-					mWriter.AddInt("MirrorImageCooldown", Illusioner->GetMirrorImageCooldown());
-					mWriter.AddInt("NextSpellType", Illusioner->GetNextSpellType());
-					break;
-				}
+						case mtTraderLlama:
+						case mtTropicalFish:
+						case mtTurtle:
+						case mtVex:
+						case mtVindicator:
+						case mtWanderingTrader:
+						case mtIllusioner:
+						{
+							const cIllusioner * Illusioner = static_cast<const cIllusioner *>(a_Monster);
+							mWriter.AddInt("SpellCooldown", Illusioner->GetSpellCooldown());
+							mWriter.AddInt("MirrorImageCooldown", Illusioner->GetMirrorImageCooldown());
+							mWriter.AddInt("NextSpellType", Illusioner->GetNextSpellType());
+							mWriter.AddByte("IsMirrorImage", Illusioner->IsMirrorImage() ? 1 : 0);
+							break;
+						}
 				case mtParrot:
 				{
 					const cParrot * Parrot = static_cast<const cParrot *>(a_Monster);
@@ -1021,13 +1022,19 @@ public:
 				}
 
 				case mtZoglin:
-				case mtZombieHorse:
-				{
-					// All the entities not added
-					LOGD("Saving unimplemented entity type: %d", NamespaceSerializer::From(a_Monster->GetMobType()));
-					break;
-				}
-				case mtInvalidType:
+						case mtZombieHorse:
+						{
+							// All the entities not added
+							LOGD("Saving unimplemented entity type: %d", NamespaceSerializer::From(a_Monster->GetMobType()));
+							break;
+						}
+						default:
+						{
+							// All unhandled entity types (1.14+ mobs we don't support)
+							LOGD("Saving unimplemented entity type: %d", NamespaceSerializer::From(a_Monster->GetMobType()));
+							break;
+						}
+						case mtInvalidType:
 				{
 					ASSERT(!"NBTChunkSerializer::SerializerCollector::AddMonsterEntity: Recieved mob of invalid type");
 					break;

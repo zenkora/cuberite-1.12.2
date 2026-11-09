@@ -1321,8 +1321,6 @@ std::unique_ptr<cMonster> cMonster::NewMonsterFromType(eMonsterType a_MobType)
 		case mtSnowGolem:      return std::make_unique<cSnowGolem>();
 		case mtSpider:         return std::make_unique<cSpider>();
 		case mtSquid:          return std::make_unique<cSquid>();
-		case mtVillager: return std::make_unique<cVillager>(cVillager::GetRandomProfession());
-		case mtVindicator:     return std::make_unique<cVindicator>();
 		case mtWitch:          return std::make_unique<cWitch>();
 		case mtWither:         return std::make_unique<cWither>();
 		case mtWitherSkeleton: return std::make_unique<cWitherSkeleton>();
@@ -1337,6 +1335,7 @@ std::unique_ptr<cMonster> cMonster::NewMonsterFromType(eMonsterType a_MobType)
 			return nullptr;
 		}
 		}
+}
 
 
 

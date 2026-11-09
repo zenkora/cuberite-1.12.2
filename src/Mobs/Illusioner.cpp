@@ -19,6 +19,12 @@ void cIllusioner::Tick(std::chrono::milliseconds a_Dt, cChunk & a_Chunk)
 {
 	Super::Tick(a_Dt, a_Chunk);
 
+	// Mirror images don't have AI - they just exist as decoys
+	if (m_IsMirrorImage)
+	{
+		return;
+	}
+
 	if (m_SpellCooldown > 0)
 	{
 		m_SpellCooldown -= static_cast<int>(a_Dt.count());
@@ -31,6 +37,12 @@ void cIllusioner::Tick(std::chrono::milliseconds a_Dt, cChunk & a_Chunk)
 
 void cIllusioner::InStateIdle(std::chrono::milliseconds a_Dt, cChunk & a_Chunk)
 {
+	// Mirror images don't have AI
+	if (m_IsMirrorImage)
+	{
+		return;
+	}
+
 	Super::InStateIdle(a_Dt, a_Chunk);
 
 	// Try to cast spell periodically
@@ -42,6 +54,12 @@ void cIllusioner::InStateIdle(std::chrono::milliseconds a_Dt, cChunk & a_Chunk)
 
 void cIllusioner::InStateChasing(std::chrono::milliseconds a_Dt, cChunk & a_Chunk)
 {
+	// Mirror images don't have AI
+	if (m_IsMirrorImage)
+	{
+		return;
+	}
+
 	Super::InStateChasing(a_Dt, a_Chunk);
 
 	// Try to cast spell while chasing
@@ -59,6 +77,12 @@ void cIllusioner::InStateChasing(std::chrono::milliseconds a_Dt, cChunk & a_Chun
 
 void cIllusioner::InStateEscaping(std::chrono::milliseconds a_Dt, cChunk & a_Chunk)
 {
+	// Mirror images don't have AI
+	if (m_IsMirrorImage)
+	{
+		return;
+	}
+
 	Super::InStateEscaping(a_Dt, a_Chunk);
 }
 
@@ -92,17 +116,29 @@ void cIllusioner::TryCastBlindnessSpell(cChunk & a_Chunk)
 
 void cIllusioner::TryCreateMirrorImages(cChunk & a_Chunk)
 {
+	// Mirror images don't create more mirror images
+	if (m_IsMirrorImage)
+	{
+		return;
+	}
+
 	// Create 4 mirror images around the illusioner
 	for (int i = 0; i < 4; ++i)
 	{
-		// Generate random angle and distance using RandInt
+		// Generate random angle and distance
 		double Angle = (i * M_PI / 2) + (static_cast<double>(GetRandomProvider().RandInt(-500, 500)) / 1000.0);
 		double Distance = 2.0 + (static_cast<double>(GetRandomProvider().RandInt(0, 1000)) / 1000.0);
 		Vector3d Pos = GetPosition() + Vector3d(cos(Angle) * Distance, 0, sin(Angle) * Distance);
 
-		// Create a temporary illusioner that looks identical but has no AI
-		// For now, we'll just show particles - full mirror images require more complex implementation
-		GetWorld()->BroadcastParticleEffect("spell", Pos, Vector3f(0, 0, 0), 1, 5);
+		// Create a mirror image illusioner
+		auto MirrorImage = std::make_unique<cIllusioner>();
+		MirrorImage->SetPosition(Pos);
+		MirrorImage->SetIsMirrorImage(true);
+		MirrorImage->SetMaxHealth(1); // Mirror images die in one hit
+		MirrorImage->SetHealth(1);
+
+		// Spawn in world
+		GetWorld()->SpawnMobFinalize(std::move(MirrorImage));
 	}
 
 	// Show spell effect on the illusioner
@@ -118,13 +154,13 @@ bool cIllusioner::DoTakeDamage(TakeDamageInfo & a_TDI)
 		return false;
 	}
 
-	// Trigger mirror images when hurt and cooldown is ready
-	if (m_MirrorImageCooldown <= 0 && GetRandomProvider().RandBool(0.5))
+	// Mirror images die instantly when hit (health is 1)
+	if (m_IsMirrorImage)
 	{
-		// The chunk parameter is not actually used for mirror images (only for particles via World)
-		// Just pass the current chunk from the tick context
-		// We can't easily get the chunk here, so we'll skip mirror images on damage for now
-		// TryCreateMirrorImages(*GetWorld()->GetChunkMap()->GetChunk(GetChunkX(), GetChunkZ()));
+		// Show death particles
+		GetWorld()->BroadcastParticleEffect("spell", GetPosition(), Vector3f(0, 0, 0), 1, 10);
+		Destroy();
+		return true;
 	}
 
 	return true;
